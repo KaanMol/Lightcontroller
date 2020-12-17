@@ -1,0 +1,18 @@
+{
+    "tewstt": {
+        "brightness": 142.79999999999998,
+        "lightState": {
+            "mode": 1,
+            "isKelvin": false,
+            "kelvinIndex": 1,
+            "colors": [
+                "#0400ff",
+                "#f6ff00"
+            ],
+            "duration": 5,
+            "rotate": {
+                "clockwise": true
+            }
+        }
+    }
+}

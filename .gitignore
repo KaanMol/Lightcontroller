@@ -1,0 +1,4 @@
+server/node_modules
+server/persist
+server/config.json
+client/node_modules

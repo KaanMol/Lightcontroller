@@ -1,0 +1,16 @@
+{
+    "system": {
+        "isSetup": true,
+        "isProduction": false,
+        "dhtPin": 4
+    },
+    "homekit": {
+        "uuid": "com.uuid.example",
+        "lightAccessory": "Light Accessory",
+        "lightBulb": "Light Bulb",
+        "temperatureSensor": "Temperature Sensor",
+        "humiditySensor": "Humidity Sensor",
+        "username": "17:51:07:F4:BC:8A",
+        "pincode": "678-90-876"
+    }
+}
