@@ -53,8 +53,8 @@
           <template v-if="$store.getters.mode === 'ROTATE'">
             <span>Draairichting</span>
             <span class="actions">
-              <button :class="{active: $store.getters.rotateClockwise === false}" @click="() => setRotateClockwise(false)">Links om</button>
-              <button :class="{active: $store.getters.rotateClockwise === true}" @click="() => setRotateClockwise(true)">Rechts om</button>
+              <button :class="{active: $store.getters.clockwiseRotation === false}" @click="() => setClockwiseRotation(false)">Links om</button>
+              <button :class="{active: $store.getters.clockwiseRotation === true}" @click="() => setClockwiseRotation(true)">Rechts om</button>
             </span>
         </template>
 <!-- 
@@ -100,8 +100,8 @@ export default {
     setBrightness(event) {
       this.$store.dispatch("setBrightness", { brightness: event.target.value });
     },
-    setRotateClockwise(rotateClockwise) {
-      this.$store.dispatch("setRotateClockwise", { rotateClockwise: rotateClockwise });
+    setClockwiseRotation(clockwiseRotation) {
+      this.$store.dispatch("setClockwiseRotation", { clockwiseRotation });
     },
     openColorPicker() {
       this.$refs.colors.openModal()
@@ -151,7 +151,7 @@ export default {
 }
 
 .actions > button, .color-controls > button {
-    background: lime;
+    background: white;
     border: none;
     outline: 0;
     height: 35px;
@@ -182,7 +182,7 @@ export default {
 
 .stack {
     display: grid;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: min-content min-content;
 }
 
 .row {

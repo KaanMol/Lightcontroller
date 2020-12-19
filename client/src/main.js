@@ -8,7 +8,7 @@ import io from 'socket.io-client';
 import Vuex from 'vuex'
 import iro from "@jaames/iro";
 import vmodal from 'vue-js-modal'
-const socket = io('192.168.1.47');
+const socket = io('localhost');
    
 Vue.use(VueRouter)
 Vue.use(Vuex);
@@ -34,7 +34,7 @@ const store = new Vuex.Store({
     mode: 0,
     kelvinIndex: 0,
     duration: 1,
-    rotateClockwise: true,
+    clockwiseRotation: true,
     scenes: []
   },
   mutations: {
@@ -48,7 +48,7 @@ const store = new Vuex.Store({
       state.kelvin = value.lightState.isKelvin;
       state.kelvinIndex = value.lightState.kelvinIndex;
       state.duration = value.lightState.duration;
-      state.rotateClockwise = value.lightState.rotate.clockwise;
+      state.clockwiseRotation = value.lightState.rotate.clockwise;
       state.colors = value.lightState.colors.map(color => {
         return new iro.Color(color["$"])
       });
@@ -83,8 +83,8 @@ const store = new Vuex.Store({
       state.kelvin = value.isKelvin;
       state.kelvinIndex = value.kelvinIndex;
     },
-    SOCKET_ROTATECLOCKWISE(state, value) {
-      state.rotateClockwise = value;
+    SOCKET_CLOCKWISEROTATION(state, value) {
+      state.clockwiseRotation = value;
     }
   },
   actions: {
@@ -109,9 +109,9 @@ const store = new Vuex.Store({
       values.self = true;
       commit("SOCKET_COLORS", values)
     },
-    setRotateClockwise({ commit }, { rotateClockwise }) {
-      this._vm.$socket.client.emit("rotateClockwise", rotateClockwise);
-      commit("SOCKET_ROTATECLOCKWISE", rotateClockwise)
+    setClockwiseRotation({ commit }, { clockwiseRotation }) {
+      this._vm.$socket.client.emit("clockwiseRotation", clockwiseRotation);
+      commit("SOCKET_CLOCKWISEROTATION", clockwiseRotation)
     },
     saveScene({ commit }, scene) {
       this._vm.$socket.client.emit("saveScene", scene);
@@ -157,8 +157,8 @@ const store = new Vuex.Store({
     mode: state => {
       return state.mode;
     },
-    rotateClockwise: state => {
-      return state.rotateClockwise;
+    clockwiseRotation: state => {
+      return state.clockwiseRotation;
     }
   }
 });
