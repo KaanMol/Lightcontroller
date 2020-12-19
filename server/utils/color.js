@@ -1,5 +1,4 @@
 const IroColor = require("@irojs/iro-core").IroColor;
-
 class Color extends IroColor {
     constructor(...args) {
         super(...args);

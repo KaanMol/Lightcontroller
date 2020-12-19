@@ -18,51 +18,45 @@ module.exports = () => {
     lightService
         .getCharacteristic(Characteristic.On)
         .on(CharacteristicEventTypes.GET, callback => {
-            callback(undefined, global.api.power);
+            callback(undefined, global.leds.isOn);
         })
-        .on(CharacteristicEventTypes.SET, (value, callback) => {
-            global.api.power = value;
+        .on(CharacteristicEventTypes.SET, (turnOn, callback) => {
+            if (turnOn) {
+                global.leds.turnOn();
+            } else {
+                global.leds.turnOff();
+            }
             callback();
         });
 
     lightService
         .getCharacteristic(Characteristic.Brightness)
         .on(CharacteristicEventTypes.GET, (callback) => {
-            callback(undefined, global.api.brightness);
+            callback(undefined, Math.round(global.leds.brightness / 2.55));
         })
         .on(CharacteristicEventTypes.SET, (value, callback) => {
-            global.api.brightness = value;
-            callback();
-        });
-
-    lightService
-        .getCharacteristic(Characteristic.ColorTemperature)
-        .on(CharacteristicEventTypes.GET, (callback) => {
-            callback(undefined, global.api.kelvin);
-        })
-        .on(CharacteristicEventTypes.SET, (value, callback) => {
-            console.log(`ColorTemperature: ${value}`);
-            global.api.kelvin = value;
+            global.leds.setBrightness(Math.round(value * 2.55));
             callback();
         });
 
     lightService
         .getCharacteristic(Characteristic.Hue)
         .on(CharacteristicEventTypes.GET, (callback) => {
-            callback(undefined, global.api.hue);
+            callback(undefined, global.leds.colors[0].hue);
         })
         .on(CharacteristicEventTypes.SET, (value, callback) => {
-            global.api.hue = value;
+            global.leds.colors[0].hue = value;
+            global.leds._render();
             callback();
         });
 
     lightService
         .getCharacteristic(Characteristic.Saturation)
         .on(CharacteristicEventTypes.GET, (callback) => {
-            callback(undefined, global.api.saturation);
+            callback(undefined, global.leds.colors[0].saturation);
         })
         .on(CharacteristicEventTypes.SET, (value, callback) => {
-            global.api.saturation = value;
+            global.leds.colors[0].saturation = value;
             callback();
         });
 
@@ -73,7 +67,7 @@ module.exports = () => {
     temperatureService
         .getCharacteristic(Characteristic.CurrentTemperature)
         .on(CharacteristicEventTypes.GET, (callback) => {
-            callback(undefined, global.api.temperature);
+            callback(undefined, "22");
         });
 
     /**
@@ -82,7 +76,7 @@ module.exports = () => {
     humidityService
         .getCharacteristic(Characteristic.CurrentRelativeHumidity)
         .on(CharacteristicEventTypes.GET, (callback) => {
-            callback(undefined, global.api.humidity);
+            callback(undefined, "50");
         })
 
     lightAccessory.addService(lightService);
