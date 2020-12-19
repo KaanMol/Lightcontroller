@@ -33,11 +33,31 @@
                 <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
             </div>
             <div class="content create">
-                <button @click="() => { page = 2 }">Overgang kiezen</button>
-                <button v-if="gradient !== undefined" :style="{ background }">{{sceneName}}</button>
+                <div v-if="sceneExists()" class="warning">
+                    <span class="far fa-exclamation-triangle"></span>
+                    Er bestaat al een scene met de naam {{sceneName}}. Deze zal worden overschreven.
+                </div>
+                <div class="preview">
+                    <span>Voorbeeld</span>
+                    <button class="example" :style="{ background }">{{sceneName === "" ? "Scene naam" : sceneName}}</button>
+                </div>
 
-                <input type="text" v-model="sceneName">
-                <button @click="saveScene">Save</button>
+                <div class="stack name">
+                    <span>Scene naam</span>
+                    <input type="text" v-model="sceneName">               
+                </div>
+
+                <div class="stack">
+                    <span>Achtergrond</span>
+                    <button class="example" :style="{ background }">{{gradient.name}}</button>
+                </div>
+
+                <!-- <div class="row">
+                    Huidige overgang
+                    <button @click="() => { page = 2 }">Overgang kiezen</button>
+                </div> -->
+                
+                <button :disabled="sceneName === ''" @click="saveScene">Save</button>
             </div>
         </template>
         <template v-if="page === 2">
@@ -64,7 +84,10 @@ export default {
         return {
             page: 0,
             sceneName: "",
-            gradient: undefined
+            gradient: {
+                "name": "Shifter",
+                "colors": ["#bc4e9c", "#f80759"]
+            }
         }
     },
     methods: {
@@ -97,6 +120,10 @@ export default {
         setScene(scene) {
             this.$store.dispatch("setScene", scene);
         },
+        sceneExists() {
+            const scenes = this.$store.getters.scenes.find(scene => scene.name.toLowerCase() === this.sceneName.toLowerCase());
+            return scenes !== undefined;
+        }
     },
     computed: {
         background() {
@@ -114,6 +141,9 @@ export default {
 </script>
 
 <style>
+    /* .warning {
+        background:
+    } */
     #modal {
         margin-top: 50px;
     }
@@ -142,12 +172,41 @@ export default {
         row-gap: 10px;
     }
 
+    .preview {
+        background: lightgray;
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .preview > span {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    .preview > button {
+        width: 100%;
+    }
+
+    .name {
+        margin-top: 15px;
+    }
+
+    .name > span {
+        /* font-weight: bold; */
+    }
+    .name > input {
+        height: 35px;
+        border-radius: 12px;
+        border: solid 1px lightgray
+    }
+
     .content.list {
         grid-template-rows: 45px 1fr;
     }
 
     .content.create {
-        grid-template-rows: 45px 1fr 1fr 1fr;
+        grid-template-rows: min-content min-content min-content min-content;
     }
 
     .content > #create {
@@ -166,9 +225,9 @@ export default {
         row-gap: 10px;
     }
 
-    .content > #scenes > button {
+    .content > #scenes > button, .example {
         outline: 0;
-        height: 45px;
+        padding: 20px;
         border-radius: 12px;
         border: none;
         background:#f80759;
