@@ -5,8 +5,7 @@
             :shiftY="0"
             transition="slide"
             overlayTransition="fade"
-            :styles="modalStyle"
-            ref="colors">
+            :styles="modalStyle">
         <div v-if="$store.getters.colors.length" class="modalContent">
             <div id="header">
                 <span>Kleurenkiezer</span>
