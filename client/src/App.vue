@@ -25,24 +25,25 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
 @import url('./assets/style/fa.css');
 
-html, body {
+html, body, #app {
   touch-action: manipulation;
   margin: 0;
   padding: 0;
   font-size: 16px;
   box-sizing: content-box;
   height: 100vh;
-  background: #bc4e9c; /* fallback for old browsers */
-  background: -webkit-linear-gradient(to top right, #bc4e9c, #f80759); /* Chrome 10-25, Safari 5.1-6 */
-  background: linear-gradient(to top right, #bc4e9c, #f80759); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-}
-
-#app {
   font-family: 'Open Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
+}
+
+#app {
   padding: 30px 15px 0 15px;
+  background: #bc4e9c; /* fallback for old browsers */
+  background: -webkit-linear-gradient(to top right, #bc4e9c, #f80759); /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to top right, #bc4e9c, #f80759); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+
 }
 
 main {
