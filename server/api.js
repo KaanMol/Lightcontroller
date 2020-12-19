@@ -126,7 +126,7 @@ function handleLeds(api) {
         case API.LIGHT_MODES.STATIC:
             if (state.isKelvin) {
                 for (let i = 0; i < NUM_LEDS; i++) {
-                    pixelData[i] = state.colors[0].int;
+                    pixelData[i] = state.colors[state.kelvinIndex].int;
                 }
                 break;
             }
@@ -179,8 +179,19 @@ function renderLeds(api, changed) {
         case "power":
             if (state.power) {
                 handleBrightness(state.brightness);
+
+                if (state.lightState.mode === API.LIGHT_MODES.ROTATE || 
+                    state.lightState.mode === API.LIGHT_MODES.FADE) {
+                    handleLeds(api);
+                }
                 break;
             }
+
+            if (api.updater !== undefined) {
+                clearTimeout(api.updater);
+                api.updater = undefined;
+            }
+
             handleBrightness(0)
             break;
         case "brightness":
@@ -346,8 +357,9 @@ class API {
         this.render("light")
     }
 
-    saveScene(sceneName, socketId) {
-        const scene = {
+    saveScene(scene, socketId) {
+        const newScene = {
+            background: scene.background,
             brightness: this.state.brightness,
             lightState: {
                 mode: this.state.lightState.mode,
@@ -361,19 +373,13 @@ class API {
             }
         };
 
-        global.scenes.push(`/${sceneName}`, scene);
-        this.emit("scene", sceneName, socketId);
+        global.scenes.push(`/${scene.name}`, newScene);
+        this.emit("scene", scene, socketId);
     }
 
     setScene(sceneName) {
         const scene = global.scenes.getData(`/${sceneName}`);
         scene.lightState.colors = scene.lightState.colors.map(color => new Color(color));
-        scene.lightState.fade = {
-            init: false,
-            currentTick: 0,
-            currentColor: 0,
-            steps: []
-        };
         scene.lightState.rotate = {
             offset: 0
         };
@@ -386,6 +392,17 @@ class API {
         this.emit("sync", global.api);
         this.render("brightness")
         this.render("mode")
+    }
+
+    getSceneObject() {
+        const obj = [];
+        for (const [key, value] of Object.entries(global.scenes.getData("/"))) {
+            obj.push({
+                name: key,
+                background: value.background
+            });
+        }
+        return obj;
     }
 
     render(prop) {
@@ -408,7 +425,7 @@ class API {
         return {
             ...this.state,
             brightness: this.brightness,
-            scenes: Object.keys(global.scenes.getData("/"))
+            scenes: this.getSceneObject()
         };
     }
 };
