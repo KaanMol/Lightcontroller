@@ -42,6 +42,7 @@
                 v-bind:initKelvin="$store.getters.kelvin"
                 v-bind:colors="$store.getters.colors"
                 @color-change="colorHandler"
+                @input-end="stateHandler"
                 v-bind:handleRadius="25"
                 v-bind:padding="-18"
             ></ColorPicker> 
@@ -89,15 +90,21 @@ export default {
                 kelvinIndex: this.$refs.picker.colorPicker.color.index,
                 colors: this.$refs.picker.colorPicker.colors
             }
-            // console.log(response)
             this.$store.dispatch("setColors", response)
+        },
+        stateHandler() {
+            let response =  {
+                isKelvin: this.$refs.picker.kelvin,
+                kelvinIndex: this.$refs.picker.colorPicker.color.index,
+                colors: this.$refs.picker.colorPicker.colors
+            }
+            this.$store.dispatch("setColorsSelf", response)
         },
         setMode(mode) {
             this.currentMode = mode;
             this.$socket.client.emit("mode", mode)
         },
         toggleMode() {
-            // this.$refs.picker.colorPicker.setColors(this.$store.getters.colorsBackup);
             this.$refs.picker.toggleMode();
             this.colorHandler();
         }

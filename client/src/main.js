@@ -8,7 +8,7 @@ import io from 'socket.io-client';
 import Vuex from 'vuex'
 import iro from "@jaames/iro";
 import vmodal from 'vue-js-modal'
-const socket = io('localhost');
+const socket = io('192.168.1.47');
    
 Vue.use(VueRouter)
 Vue.use(Vuex);
@@ -107,6 +107,9 @@ const store = new Vuex.Store({
     setColors({ commit }, values) {
       this._vm.$socket.client.emit("colors", values);
       values.self = true;
+      commit("SOCKET_COLORS", values)
+    },
+    setColorsSelf({ commit }, values) {
       commit("SOCKET_COLORS", values)
     },
     setClockwiseRotation({ commit }, { clockwiseRotation }) {
