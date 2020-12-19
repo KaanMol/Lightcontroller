@@ -70,8 +70,8 @@ const store = new Vuex.Store({
     SOCKET_ISKELVIN(state, value) {
       state.isKelvin = value;
     },
-    SOCKET_SCENE(state, value) {
-      state.scenes.push(value);
+    SOCKET_SCENE(state, scene) {
+      state.scenes.push(scene);
     },
     SOCKET_COLORS(state, value) {
       if (value.self !== true) {
@@ -113,12 +113,12 @@ const store = new Vuex.Store({
       this._vm.$socket.client.emit("rotateClockwise", rotateClockwise);
       commit("SOCKET_ROTATECLOCKWISE", rotateClockwise)
     },
-    saveScene({ commit }, sceneName) {
-      this._vm.$socket.client.emit("saveScene", sceneName);
-      commit("SOCKET_SCENE", sceneName)
+    saveScene({ commit }, scene) {
+      this._vm.$socket.client.emit("saveScene", scene);
+      commit("SOCKET_SCENE", scene)
     },
     setScene(tmp, sceneName) {
-      tmp
+      tmp 
       this._vm.$socket.client.emit("setScene", sceneName);
       // commit("SOCKET_SCENE", sceneName)
     }

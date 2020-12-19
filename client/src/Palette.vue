@@ -1,5 +1,5 @@
 <template>
-  <div class="gradient" :style="backgroundStyle" @click.prevent="changeGradient(gradient.name)">
+  <div class="gradient" :style="backgroundStyle" @click.prevent="changeGradient(gradient)">
       <span>{{ gradient.name }}</span>
   </div>
 </template>
@@ -28,8 +28,8 @@ export default {
     },
   },
   methods: {
-    changeGradient(name) {
-      this.updateGradient(name);
+    changeGradient(gradient) {
+      this.updateGradient(gradient);
     },
   },
 };

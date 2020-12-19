@@ -1,40 +1,27 @@
 <template>
   <main>
-    <div class="card">
-      <div class="shortlist">
-        <template v-for="item in shortlists">
-          <div class="item" :key="item.name" :style="`backgroundColor: ${item.color}`" @click="filterGradients(item.name)" :class="{ active: isActiveShortlist(item.name)}">
-            <a href="#" class="shortlist__link" v-if="currentFilter === item.name" @click.prevent.stop="clearFilter()">
-              clear
-            </a>
-          </div>
-        </template>
-      </div>
- 
- -
-      <div class="pallette-list">
-        <Palette
-          v-for="(gradient, index) in filteredGradients"
-          :key="`${gradient}${index}`" 
-          :gradient="gradient"
-          :updateGradient="changeGradient" />
-      </div>
+    <div class="shortlist">
+      <template v-for="item in shortlists">
+        <div class="item" :key="item.name" :style="`backgroundColor: ${item.color}`" @click="filterGradients(item.name)" :class="{ active: isActiveShortlist(item.name)}">
+          <a href="#" class="shortlist__link" v-if="currentFilter === item.name" @click.prevent.stop="clearFilter()">
+            clear
+          </a>
+        </div>
+      </template>
+    </div>
+
+    <div class="pallette-list">
+      <Palette
+        v-for="(gradient, index) in filteredGradients"
+        :key="`${gradient}${index}`" 
+        :gradient="gradient"
+        :updateGradient="emit" />
+
     </div>
   </main>
 </template>
 
 <style scoped>
-main {
-  display: block;
-}
-
-.card {
-  display: block;
-  height: 100vh;
-  overflow-y: auto;
-  height: 100%;
-  
-}
 .shortlist {
   display: inline-block;
   overflow: scroll;
@@ -109,15 +96,6 @@ export default {
         return this.classifiedColors;
       },
       classifiedColors() {
-        // detect;
-        // gradients.forEach(gradient => {
-        //   // const tags = [];
-        //   const colors = gradient.colors;
-        //   colors.forEach(color => console.log(detect(color)))
-        //   console.log();
-        // })
-        // console.log(gradients)
-        // const { gradients } = this;
         gradients.forEach((gradient) => {
           const tags = [];
           gradient.colors.forEach(color => tags.push(detect(color)));
@@ -160,21 +138,17 @@ export default {
         return this.filterPalettes('Grays');
       },
     },
-    created() {
-        // console.log(this.cyanPalettes())
-    },
     methods: {
       isActiveShortlist(color) {
         return (this.currentFilter === color);
       },
-      changeGradient(name) {
-        this.updateGradient(name);
+      emit(test) {
+        this.$emit("background", test)
       },
       clearFilter() {
         this.filterGradients(false);
       },
       filterGradients(name) {
-        // this.$ga.event('filter gradients', 'click', name);
         this.currentFilter = name;
       },
     },

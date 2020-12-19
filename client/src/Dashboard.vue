@@ -1,6 +1,7 @@
 <template>
   <main v-if="$store.getters.loaded">
-    <Modal ref="colors"></Modal>
+    <ColorModal ref="colors"></ColorModal>
+    <SceneModal ref="scenes"></SceneModal>
     <div id="welcome">
       <span class="title">Goedenavond</span>
       <span class="far fa-cog"></span>
@@ -22,14 +23,15 @@
       <div id="power">
         <button @click="togglePower"><span class="far fa-lightbulb-on"></span></button>
         <button @click="openColorPicker"><span class="far fa-palette"></span></button>
+        <button @click="openScenePicker"><span class="far fa-list"></span></button>
       </div>
       <div class="stack">
-            <div class="row">
-                <span>Helderheid</span>     
-                <span>{{$store.getters.brightness}}%</span>
-            </div>
-            <input @input="setBrightness" type="range" min="1" max="100" v-bind:value="$store.getters.brightness" class="slider" id="myRange">
-        </div>
+          <div class="row">
+              <span>Helderheid</span>     
+              <span>{{$store.getters.brightness}}%</span>
+          </div>
+          <input @input="setBrightness" type="range" min="1" max="100" v-bind:value="$store.getters.brightness" class="slider" id="myRange">
+      </div>
 
       <span>Actie</span>
       <span class="actions">
@@ -40,20 +42,20 @@
       </span>
 
         <template v-if="$store.getters.mode === 'FADE' || $store.getters.mode === 'ROTATE'">
-        <div class="stack">
-            <div class="row">
-                <span>Animatieduur</span>     
-                <span>{{$store.getters.duration}} sec</span>
-            </div>
-            <input @input="setDuration" type="range" min="1" max="30" v-bind:value="$store.getters.duration" class="slider" id="myRange1">
-        </div>
-        </template>
-        <template v-if="$store.getters.mode === 'ROTATE'">
-          <span>Draairichting</span>
-          <span class="actions">
-            <button :class="{active: $store.getters.rotateClockwise === false}" @click="() => setRotateClockwise(false)">Links om</button>
-            <button :class="{active: $store.getters.rotateClockwise === true}" @click="() => setRotateClockwise(true)">Rechts om</button>
-          </span>
+          <div class="stack">
+              <div class="row">
+                  <span>Animatieduur</span>     
+                  <span>{{$store.getters.duration}} sec</span>
+              </div>
+              <input @input="setDuration" type="range" min="1" max="30" v-bind:value="$store.getters.duration" class="slider" id="myRange1">
+          </div>
+          </template>
+          <template v-if="$store.getters.mode === 'ROTATE'">
+            <span>Draairichting</span>
+            <span class="actions">
+              <button :class="{active: $store.getters.rotateClockwise === false}" @click="() => setRotateClockwise(false)">Links om</button>
+              <button :class="{active: $store.getters.rotateClockwise === true}" @click="() => setRotateClockwise(true)">Rechts om</button>
+            </span>
         </template>
 <!-- 
       <div   class="group">
@@ -72,12 +74,6 @@
       <!-- <router-link to="/light">Licht</router-link> -->
  
     </div>
-    <div class="card">
-      Scenes
-      <div v-for="(scene, index) in $store.getters.scenes" :key="`${scene}${index}`">
-        <button @click="() => setScene(scene)">{{scene}}</button>
-      </div>
-    </div>
   </main>
 
   <main v-else>
@@ -86,15 +82,11 @@
 </template>
 
 <script>
-import Modal from './PickerModal.vue'
+import ColorModal from './PickerModal.vue'
+import SceneModal from './SceneModal.vue'
 
 export default {
   name: 'Dashboard',
-  data() {
-    return {
-      sceneName: ""
-    }
-  },
   methods: {
     togglePower() {
       this.$store.dispatch("setPower", { power: !this.$store.getters.power });
@@ -111,19 +103,16 @@ export default {
     setRotateClockwise(rotateClockwise) {
       this.$store.dispatch("setRotateClockwise", { rotateClockwise: rotateClockwise });
     },
-    saveScene() {
-      this.$store.dispatch("saveScene", this.sceneName);
-      this.sceneName = "";
-    },
-    setScene(scene) {
-      this.$store.dispatch("setScene", scene);
-    },
     openColorPicker() {
       this.$refs.colors.openModal()
+    },
+    openScenePicker() {
+      this.$refs.scenes.openModal()
     }
   },
   components: {
-    Modal
+    ColorModal,
+    SceneModal
   }
 }
 </script>
