@@ -1,18 +1,21 @@
 import Vue from 'vue'
-import VueRouter from 'vue-router'
 import App from './App.vue'
-import Dashboard from './Dashboard.vue'
-import Gradients from './GradientPicker.vue'
 import VueSocketIOExt from 'vue-socket.io-extended';
 import io from 'socket.io-client';
 import Vuex from 'vuex'
 import iro from "@jaames/iro";
 import vmodal from 'vue-js-modal'
+import vueDebounce from 'vue-debounce'
+
 const socket = io('192.168.1.47');
-   
-Vue.use(VueRouter)
+
+import { preferences } from "./store/preferences";
+
 Vue.use(Vuex);
 Vue.use(vmodal);
+Vue.use(vueDebounce)
+
+console.log(preferences);
 
 const MODES = [
   "STATIC",
@@ -22,6 +25,9 @@ const MODES = [
 ];  
 
 const store = new Vuex.Store({
+  modules: {
+    preferences
+  },
   state: {
     gradientName: "Shifter",
     loaded: false,
@@ -35,12 +41,12 @@ const store = new Vuex.Store({
     kelvinIndex: 0,
     duration: 1,
     clockwiseRotation: true,
-    scenes: []
+    scenes: [],
+    activeScene: ""
   },
   mutations: {
     SOCKET_SYNC(state, value) {
       console.log(value)
-      state.loaded = true;
       state.temperature = value.temperature;
       state.humidity = value.humidity;
       state.power = value.power;
@@ -54,6 +60,10 @@ const store = new Vuex.Store({
       });
       state.mode = MODES[value.lightState.mode],
       state.scenes = value.scenes;
+      state.activeScene = value.activeScene;
+      state.loaded = true;
+
+
     },
     SOCKET_POWER(state, value) {
       state.power = value;
@@ -70,8 +80,14 @@ const store = new Vuex.Store({
     SOCKET_ISKELVIN(state, value) {
       state.isKelvin = value;
     },
-    SOCKET_SCENE(state, scene) {
-      state.scenes.push(scene);
+    SOCKET_NEWSCENE(state, newScene) {
+      const sceneExists = state.scenes.findIndex(scene => scene.name === newScene.name)
+      console.log(sceneExists);
+      state.scenes.push(newScene);
+    },
+    SOCKET_ACTIVESCENE(state, sceneName) {
+      console.log(sceneName);
+      state.activeScene = sceneName;
     },
     SOCKET_COLORS(state, value) {
       if (value.self !== true) {
@@ -85,6 +101,16 @@ const store = new Vuex.Store({
     },
     SOCKET_CLOCKWISEROTATION(state, value) {
       state.clockwiseRotation = value;
+    },
+    SOCKET_SENSORUPDATE(state, value) {
+      state.temperature = value.temperature;
+      state.humidity = value.humidity;
+    },
+    SOCKET_DISCONNECT(state) {
+      state.loaded = false;
+    },
+    SOCKET_CONNECT() {
+      this._vm.$socket.client.emit("sync");
     }
   },
   actions: {
@@ -116,52 +142,13 @@ const store = new Vuex.Store({
       this._vm.$socket.client.emit("clockwiseRotation", clockwiseRotation);
       commit("SOCKET_CLOCKWISEROTATION", clockwiseRotation)
     },
-    saveScene({ commit }, scene) {
-      this._vm.$socket.client.emit("saveScene", scene);
-      commit("SOCKET_SCENE", scene)
+    createScene({ commit }, scene) {
+      this._vm.$socket.client.emit("createScene", scene);
+      commit("SOCKET_NEWSCENE", scene)
     },
-    setScene(tmp, sceneName) {
-      tmp 
-      this._vm.$socket.client.emit("setScene", sceneName);
-      // commit("SOCKET_SCENE", sceneName)
-    }
-  },
-  getters: {
-    loaded: state => {
-      return state.loaded;
-    },
-    scenes: state => {
-      return state.scenes;
-    },
-    duration: state => {
-      return state.duration;
-    },
-    temperature: state => {
-      return state.temperature;
-    },
-    humidity: state => {
-      return state.humidity;
-    },
-    power: state => {
-      return state.power;
-    },
-    brightness: state => {
-      return state.brightness;
-    },
-    kelvin: state => {
-      return state.kelvin;
-    },
-    kelvinIndex: state => {
-      return state.kelvinIndex;
-    },
-    colors: state => {
-      return state.colors;
-    },
-    mode: state => {
-      return state.mode;
-    },
-    clockwiseRotation: state => {
-      return state.clockwiseRotation;
+    applyScene({ commit }, sceneName) {
+      this._vm.$socket.client.emit("applyScene", sceneName);
+      commit("SOCKET_ACTIVESCENE", sceneName)
     }
   }
 });
@@ -170,22 +157,7 @@ Vue.use(VueSocketIOExt, socket, { store });
 
 Vue.config.productionTip = false
 
-// const Bar = { template: '<div>bar</div>' }
-const routes = [
-  { path: '/', component: Dashboard },
-  { path: '/gradients', component: Gradients }
-]
-
-// 3. Create the router instance and pass the `routes` option
-// You can pass in additional options here, but let's
-// keep it simple for now.
-const router = new VueRouter({
-  mode: 'history',
-  routes // short for `routes: routes`
-})
-
 new Vue({
   store,
-  router,
   render: h => h(App),
 }).$mount('#app')

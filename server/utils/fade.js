@@ -1,6 +1,10 @@
 const TICKS = 200;
 module.exports = {
     calculateFade(a, b) {
+        if (b === undefined) {
+            return [0,0,0]
+        }
+        
         let colorSteps = [];
         let hsv = ["h", "s", "v"];
         for (let i = 0; i < 3; i++) {
