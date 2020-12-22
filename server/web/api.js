@@ -5,6 +5,4 @@ api.get("/", (req, res) => {
     res.send(global.api);
 });
 
-
-
 module.exports = api;

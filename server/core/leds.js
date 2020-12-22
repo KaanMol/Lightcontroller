@@ -1,4 +1,4 @@
-const { calculateFade } = require("./fade");
+const { calculateFade } = require("../utils/fade");
 const { Color } = require("../utils/color");
 const NUM_LEDS = global.db.getData("/system/pixelCount");
 const TICKS = 200;
@@ -22,7 +22,7 @@ class LEDDriver {
         this.pixelData = new Array(NUM_LEDS);
         this.animation;
         this.mode = LEDDriver.MODE.STATIC;
-        this.colors = [new Color({ h:180, s:100, v:100}), new Color({ h:0, s:100, v:100})];
+        this.colors = [];
         this.rotate = {
             clockwise: true
         }
@@ -30,7 +30,7 @@ class LEDDriver {
         this.duration = 5000;
 
         this.setBrightness(this.brightness);
-        this._render();
+        this.setColors(global.state.colors);
     }
 
     turnOff() {
@@ -99,21 +99,20 @@ class LEDDriver {
                 }
                 break;
             case LEDDriver.MODE.ROTATE:
-                this._animate(this._animateRotation);
+                this._animate(this._animationRotation);
                 break;
             case LEDDriver.MODE.FADE:
-                this._animate(this._animateFade);
+                this._animate(this._animationFade);
                 break;
         };
     }
 
     _animate(animationMethod) {
         // console.log(this.duration / TICKS)
-        // const animation = function() {
-        //     animation();
-        //     this.animation = setTimeout(animationMethod, this.duration / TICKS)
-        // };
-        // animation();
+        const animation = () => {
+            this.animation = setTimeout(animationMethod.bind(this), this.duration / TICKS);
+        };
+        animation();
     }
 
     _animationFade() {

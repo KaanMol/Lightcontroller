@@ -1,14 +1,15 @@
-const e = require("express");
 const express = require("express");
 const app = express();
 const http = require('http').createServer(app);
+const Scenes = require("../core/scenes");
+const system = require("../utils/system");
 
-const io = require('socket.io')(http, {
+global.io = require('socket.io')(http, {
     cors: {
         origin: '*'
     }
 });
-const api = require("./api");
+const homekit = require("../homekit");
 /**
  * Serve static webpage to root
  */
@@ -17,45 +18,46 @@ app.use(express.static("public"))
 /**
  * Bind REST API Express
  */
-app.use("/api", api);
+// app.use("/api", api);
 
-function getSceneObject() {
-    const obj = [];
-    for (const [key, value] of Object.entries(global.scenes.getData("/"))) {
-        obj.push({
-            name: key,
-            background: value.background
-        });
-    }
-    return obj;
-}
-
-let isKelvin = false;
-let kelvinIndex = 0;
+const scenes = new Scenes();
 
 io.on('connection', (socket) => {
-    socket.on("sync", () => {
+    socket.on("sync", async () => {
+        const preferences = global.db.getData("/preferences");
+        preferences.rebootNeeded = false;
+        preferences.hostname = await system.getHostname();
+        preferences.ip = await system.getIP();
+
         const data = {
             temperature: global.sensor.temperature,
             humidity: global.sensor.humidity,
-
             power: global.leds.isOn,
             brightness: Math.round(global.leds.brightness / 2.55),
+            activeScene: global.state.activeScene,
             lightState: {
-                colors: global.leds.colors,
+                colors: global.state.colors,
                 duration: global.leds.duration / 1000,
-                isKelvin: isKelvin,
-                kelvinIndex: kelvinIndex,
+                isKelvin: global.state.isKelvin,
+                kelvinIndex: global.state.kelvinIndex,
                 mode: global.leds.mode,
                 rotate: {
                     clockwise: global.leds.rotate.clockwise
                 }
             },
-            scenes: getSceneObject()
+            preferences,
+            scenes: scenes.getCollection()
         }
 
         socket.emit("sync", data)
     });
+
+    setInterval(() => {
+        socket.emit("sensorUpdate", { 
+            temperature: global.sensor.temperature,
+            humidity: global.sensor.humidity
+        });
+    }, 8000)
 
     socket.on("power", (turnOn) => { 
         if (turnOn) {
@@ -64,25 +66,31 @@ io.on('connection', (socket) => {
             global.leds.turnOff();
         }
 
+        console.log(turnOn)
+        homekit.setPower(turnOn);
+
         socket.broadcast.emit("power", turnOn);
     });
 
     socket.on("brightness", (brightness) => {
         global.leds.setBrightness(Math.round(brightness * 2.55));
-
+        homekit.setBrightness(brightness);
         socket.broadcast.emit("brightness", brightness);
     });
 
     socket.on("colors", (value) => {
-        isKelvin = value.isKelvin;
-        kelvinIndex = value.kelvinIndex;
+        global.state.isKelvin = value.isKelvin;
+        global.state.kelvinIndex = value.kelvinIndex;
+        global.state.colors = value.colors;
 
-        if (isKelvin) {
+        if (global.state.isKelvin) {
             global.leds.mode = 0;
-            global.leds.setColors([value.colors[kelvinIndex]])
+            global.leds.setColors([value.colors[global.state.kelvinIndex]])
         } else {
             global.leds.setColors(value.colors)
         }
+        // console.log(value.colors[value.kelvinIndex]);
+        homekit.setColor(value.colors[value.kelvinIndex].$)
 
         socket.broadcast.emit("colors", value);
     });
@@ -103,50 +111,59 @@ io.on('connection', (socket) => {
         socket.broadcast.emit("clockwiseRotation", value);
     });
 
-    socket.on("saveScene", (value) => {
-        // global.api.saveScene(value, socket.id)
+    socket.on("createScene", (scene) => {
+        scenes.createScene({
+            name: scene.name,
+            textColor: scene.textColor,
+            background: scene.background,
+            brightness: global.leds.brightness,
+            mode: global.leds.mode,
+            isKelvin: global.state.isKelvin,
+            kelvinIndex: global.state.kelvinIndex,
+            colors: global.state.colors,
+            duration: global.leds.duration,
+            clockwiseRotation: global.leds.rotate.clockwise
+        });
+
+        socket.broadcast.emit("newScene", scene);
     });
 
-    socket.on("setScene", (value) => {
-        // global.api.setScene(value)
+    socket.on("applyScene", (sceneName) => {
+        const scene = scenes.getNode(sceneName);
+        global.state.activeScene = sceneName;
+        global.state.isKelvin = scene.isKelvin;
+        global.state.kelvinIndex = scene.kelvinIndex;
+        global.state.colors = scene.colors;
+        global.leds.colors = scene.colors;
+        global.leds.duration = scene.duration;
+        global.leds.rotate.clockwise = scene.clockwiseRotation;
+        global.leds.setBrightness(scene.brightness);
+        global.leds.setMode(scene.mode);
+
+        socket.broadcast.emit("activeScene", sceneName);
     });
+
+    socket.on("setHostname", async (hostname) => {
+        global.state.rebootNeeded = true;
+        await system.setHostname(hostname);
+        socket.broadcast.emit("rebootNeeded", true);
+    });
+
+    socket.on("theme", ({ type, value }) => {
+        global.db.push("/preferences/ui", { [type]: value }, false);
+        socket.broadcast.emit("theme", { type, value });
+    });
+
+    socket.on("scene", ({ type, value }) => {
+        global.db.push("/preferences/scene", { [type]: value }, false);
+        socket.broadcast.emit("scene", { type, value });
+    });
+
+    socket.on("reboot", () => {
+        console.log("reboot")
+        // setTimeout(system.reboot, 5000);
+    });
+
 });
 
 module.exports = http;
-
-// saveScene(scene, socketId) {
-//     const newScene = {
-//         background: scene.background,
-//         brightness: this.state.brightness,
-//         lightState: {
-//             mode: this.state.lightState.mode,
-//             isKelvin: this.state.lightState.isKelvin,
-//             kelvinIndex: this.state.lightState.kelvinIndex,
-//             colors: this.state.lightState.colors.map(color => color.hexString),
-//             duration: this.state.lightState.duration,
-//             rotate: {
-//                 clockwise: this.state.lightState.rotate.clockwise
-//             }
-//         }
-//     };
-
-//     global.scenes.push(`/${scene.name}`, newScene);
-//     this.emit("scene", scene, socketId);
-// }
-
-// setScene(sceneName) {
-//     const scene = global.scenes.getData(`/${sceneName}`);
-//     scene.lightState.colors = scene.lightState.colors.map(color => new Color(color));
-//     scene.lightState.rotate = {
-//         offset: 0
-//     };
-
-//     this.state = {
-//         ...this.state,
-//         ...scene
-//     }
-
-//     this.emit("sync", global.api);
-//     this.render("brightness")
-//     this.render("mode")
-// }
