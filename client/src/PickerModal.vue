@@ -1,52 +1,57 @@
 <template>
-    <modal  name="pickerModal"
+    <modal name="pickerModal"
             width="100%"
             height="100%"
-            :shiftY="0"
             transition="slide"
             overlayTransition="fade"
-            :styles="modalStyle">
-        <div v-if="$store.getters.colors.length" class="modalContent">
-            <div id="header">
-                <span>Kleurenkiezer</span>
-                <span class="far fa-times"></span>
+            id="modal">
+        <div>
+            <div class="header">
+                <span></span>
+                <span class="title">Kleur kiezer</span>
+                <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
             </div>
-            <div class="tabs">
-                <button 
-                    :class="{active: !$store.getters.kelvin}" 
-                    :disabled="!$store.getters.kelvin"
-                    @click="toggleMode">
-                    Kleur
-                </button>
 
-                <button 
-                    :class="{active: $store.getters.kelvin}" 
-                    :disabled="$store.getters.kelvin"
-                    @click="toggleMode">
-                    Temperatuur
-                </button>
-            </div>
+            <div class="content">
+                <nav>
+                    <button 
+                        class="color"
+                        :class="{active: !$store.state.kelvin}" 
+                        :disabled="!$store.state.kelvin"
+                        @click="toggleMode">
+                        Kleur
+                    </button>
+
+                    <button 
+                        class="temperature"
+                        :class="{active: $store.state.kelvin}" 
+                        :disabled="$store.state.kelvin"
+                        @click="toggleMode">
+                        Temperatuur
+                    </button>
+
+                    <div class="background"></div>
+                </nav>
             
-            <div v-if="!$store.getters.kelvin" class="group-container">
-                <div class="group">
-                    <span>Kleuren</span>
-                    <div class="color-controls">
-                        <button @click="addColor">+</button>
-                        <button :disabled="$store.getters.colors.length === 1" @click="removeColor">-</button>
-                    </div> 
-                </div>
+                <ColorPicker 
+                    id="color-picker"
+                    ref="picker"
+                    v-bind:initKelvin="$store.state.kelvin"
+                    v-bind:colors="$store.state.colors"
+                    @color-change="colorHandler"
+                    @color-count="colorCountHandler"
+                    @input-end="stateHandler"
+                    v-bind:handleRadius="25"
+                    v-bind:padding="-15"
+                ></ColorPicker>  
+
+                <div v-if="!$store.state.kelvin" class="colors">
+                    <!-- <div class="title">Kleuren</div> -->
+                    <button :disabled="colorCount === 1" @click="removeColor"><i class="far fa-minus"></i></button>
+                    <button @click="addColor"><i class="far fa-plus"></i></button>
+                </div> 
             </div>
-            <ColorPicker 
-                id="color-picker"
-                ref="picker"
-                v-bind:initKelvin="$store.getters.kelvin"
-                v-bind:colors="$store.getters.colors"
-                @color-change="colorHandler"
-                @input-end="stateHandler"
-                v-bind:handleRadius="25"
-                v-bind:padding="-18"
-            ></ColorPicker> 
-            </div>
+        </div>
     </modal>
 </template>
 
@@ -58,22 +63,29 @@ export default {
     name: 'Light',
     data() {
         return {
-            isKelvin: false,
-            modalStyle: {
-                marginTop: "50px"
-            }
+            colorCount: 1,
+            isKelvin: false
         }
     },
+    mounted() {
+        this.colorCount = this.$store.state.colors.length;
+    },
     methods: {
+        colorCountHandler(count) {
+            this.colorCount = count;
+        },
+        closeModal() {
+            this.$modal.hide('pickerModal')
+        },
         durationHandler() {
             this.$socket.client.emit("duration", this.duration);
         },
         openModal() {
             this.$modal.show('pickerModal')
         },
-
         addColor() {
             this.$refs.picker.colorPicker.addColor(new iro.Color("#ffffff"))
+
             this.$store.dispatch("setColors", { 
                 isKelvin: false,
                 colors: this.$refs.picker.colorPicker.colors,
@@ -115,96 +127,96 @@ export default {
 }
 </script>
 
-<style>
- 
-    .modalContent {
-        box-sizing: border-box;
-        padding: 15px;
-        display: grid;
-        grid-template-rows: 50px min-content 1fr; 
-        height: calc(100% - 50px);
-        align-items: center;
-    }
+<style lang="scss" scoped>
 
-    .card.group-container {
-        display: grid;
-        row-gap: 20px;
-    }
-
-    .color-controls {
+    nav {
+        border-radius: 12px;
+        background: var(--background);
+        position: relative;
+        z-index: 1;
+        height: 50px;
         display: grid;
         grid-template-columns: 1fr 1fr;
+        padding: 5px;
+
+        .background {
+            // margin: 5px;
+            height: 40px;
+            grid-column: 1;
+            grid-row: 1;
+            z-index: -1;
+            background: var(--primary);
+            transition: 350ms;
+            border-radius: 8px;
+        }
+        box-shadow: 2px 3px 10px 0px rgba(0,0,0,0.15);
+
+        button { 
+            height: 40px;
+            padding: 0;
+            // color: var(--color);
+            // cursor: pointer;
+            // border-radius: 8px;
+            // outline: 0;
+            // background: none;
+            // border: none;
+            grid-row: 1;
+            box-shadow: none;
+            background: none;
+            // font-size: 14px;
+            &.active {
+                font-weight: 600;
+                background: none;
+            }
+            &:disabled {
+                opacity: 1;
+            }
+        }
+
+        .color.active ~ .background {
+            transform: translateX(0%);
+        }
+
+        .temperature.active ~ .background {
+            transform: translateX(100%);
+        }
+
+        .color {
+            grid-column: 1;
+        }
+
+        .temperature {
+            grid-column: 2;
+        }
     }
 
-    .group {
-        display: grid;
-        grid-template-rows: min-content min-content;
-    }
-   
- 
     #color-picker {
-        grid-row: 3;
+        position: relative;
+        z-index: 1;
+        align-self: center;
         display: block;
     }
     
-    .IroHandle circle[stroke="#000"] {
-        stroke: rgba(0,0,0,0.2);
-        stroke-width: 1;
+    .content {
+        // box-sizing: border-box;
+        margin: 15px !important;
+        overflow: hidden !important;
+        max-height: calc(100% - env(safe-area-inset-top,0) - 80px) !important;
+        display: grid;
+        grid-template-rows: 50px 1fr 50px;
     }
 
-    .IroHandle circle[stroke="#fff"] {
-        stroke-width: 1.5;
-    }
-/*     
     .colors {
-
-    } */
-
-    .tabs {
-        background: lightgray;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        column-gap: 20px;
-        padding: 2px;
-        margin: 0 20px 0 20px;
-        border-radius: 25px;
-    }
-    .tabs > button {
-        height: 30px;
-        border-radius: 25px;
-        border: none;
-        background: none;
-        outline: 0;
-    }
-
-    .tabs > button.active {
-        background: white;
-        color: inherit;
-        transition: 300ms;
-    }
-
-    .color {
-        display: inline-block;
-        min-height: 35px;
-        min-width: 35px;
-        border-radius: 50px;
-    }
-
-
-    .slide-enter-active {
-        animation: bounce-in .35s;
-    }
-
-    .slide-leave-active {
-        animation: bounce-in .35s reverse;
-    }
-
-    @keyframes bounce-in {
-        0% {
-            transform: translateY(100%);
+        column-gap: 15px;
+         & > div.title {
+             grid-column: 1/2;
+             margin-bottom: 10px;
         }
-        100% {
-            transform: translateY(0%);
+        button {
+            grid-row: 2;
         }
+
     }
 </style>

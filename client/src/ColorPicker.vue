@@ -1,10 +1,5 @@
 <template>
-    <div>
-      <div style="box-sizing: border-box;max-width: 100vw;" ref="picker"></div>
-      <span v-if="colorPicker !== null">{{colorPicker.color.index}}</span>
-
-
-    </div>
+  <div style="box-sizing: border-box;max-width: 100vw;" ref="picker"></div>
 </template>
 
 <script>
@@ -122,7 +117,6 @@ export default {
       this.$emit("input", color.hexString);
     },
     onColorChange(color, changes) {
-      // color.isKelvin = this.kelvin;
       if (this.kelvin) {
           this.setHandleFill()
       }
@@ -132,11 +126,13 @@ export default {
         changes,
       });
     },
-    onColorInit(color, changes) {
-      this.$emit("color-init", {
-        color,
-        changes,
-      });
+    onColorInit() {
+        this.colorPicker.setActiveColor(this.colorPicker.colors.length - 1)
+        this.$emit("color-count", this.colorPicker.colors.length);
+    },
+    onColorRemove() {
+        this.colorPicker.setActiveColor(this.colorPicker.colors.length - 1)
+        this.$emit("color-count", this.colorPicker.colors.length);
     },
     onInputChange(color, changes) {
       this.$emit("input-change", {
@@ -203,23 +199,28 @@ export default {
     this.colorPicker.on("input:end", this.onInput);
     this.colorPicker.on("color:change", this.onColorChange);
     this.colorPicker.on("color:init", this.onColorInit);
+    this.colorPicker.on("color:remove", this.onColorRemove);
     this.colorPicker.on("input:change", this.onInputChange);
     this.colorPicker.on("input:start", this.onInputStart);
     this.colorPicker.on("input:move", this.onInputMove);
     this.colorPicker.on("input:end", this.onInputEnd);
     this.colorPicker.on("mount", this.onMount);
-    window.addEventListener('resize', this.onResize);
+    // window.addEventListener('resize', this.onResize);
+
+    this.colorPicker.setActiveColor(this.$store.state.kelvinIndex)
+    console.log(this.colorPicker)
   },
   beforeUnmount() {
     this.colorPicker.off("input:end", this.onInput);
     this.colorPicker.off("color:change", this.onColorChange);
+    this.colorPicker.off("color:remove", this.onColorRemove);
     this.colorPicker.off("color:init", this.onColorInit);
     this.colorPicker.off("input:change", this.onInputChange);
     this.colorPicker.off("input:start", this.onInputStart);
     this.colorPicker.off("input:move", this.onInputMove);
     this.colorPicker.off("input:end", this.onInputEnd);
     this.colorPicker.off("mount", this.onMount);
-    window.removeEventListener("resize", this.onResize)
+    // window.removeEventListener("resize", this.onResize)
   },
   computed: {
     layoutOptions() {
@@ -241,7 +242,7 @@ export default {
                         sliderShape: "circle",
                         minTemperature: 4000,
                         maxTemperature: 9000,
-                        // activeIndex: this.$store.getters.kelvinIndex
+                        // activeIndex: this.$store.state.kelvinIndex
                     },
                 },
             ]
@@ -257,11 +258,12 @@ export default {
       }
     },
     '$store.state.colors'(value) {
-      this.toggleMode(this.$store.getters.kelvin);
+      this.toggleMode(this.$store.state.kelvin);
       this.colorPicker.setColors(value.map(color => color.hexString));
-      this.colorPicker.setActiveColor(this.$store.getters.kelvinIndex)
+      this.colorPicker.setActiveColor(this.$store.state.kelvinIndex)
+      this.$emit("colorCount", this.colorPicker.colors.length)
 
-      if (this.$store.getters.kelvin) {
+      if (this.$store.state.kelvin) {
         this.setHandleFill();
       }
     }
@@ -270,3 +272,16 @@ export default {
   },
 };
 </script>
+
+<style>
+    .IroHandle circle[stroke="#000"] {
+        position: absolute;
+        stroke: rgba(0,0,0,0.2);
+        stroke-width: 1;
+    }
+
+    .IroHandle circle[stroke="#fff"] {
+      position: absolute;
+        stroke-width: 1.5;
+    }
+</style>
