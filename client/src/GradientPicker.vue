@@ -1,11 +1,11 @@
 <template>
-  <main>
+  <div id="gradient">
     <div class="shortlist">
       <template v-for="item in shortlists">
         <div class="item" :key="item.name" :style="`backgroundColor: ${item.color}`" @click="filterGradients(item.name)" :class="{ active: isActiveShortlist(item.name)}">
-          <a href="#" class="shortlist__link" v-if="currentFilter === item.name" @click.prevent.stop="clearFilter()">
-            clear
-          </a>
+          <div v-if="currentFilter === item.name" @click.prevent.stop="clearFilter()">
+              <i class="far fa-times"></i>
+          </div>
         </div>
       </template>
     </div>
@@ -18,26 +18,54 @@
         :updateGradient="emit" />
 
     </div>
-  </main>
+  </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+#gradient {
+  width: 100%;
+  display: grid;
+  grid-template-rows: 35px 1fr;
+  row-gap: 15px;
+}
 .shortlist {
-  display: inline-block;
-  overflow: scroll;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  overflow: auto;
+  display: grid;
+  column-gap: 10px;
+  grid-template-columns: repeat(10, 70px);
 }
 
-.shortlist > .item{
-  display: inline-block;
+.shortlist::-webkit-scrollbar {
+  display: none;
+}
+
+.item {
+  box-shadow: 2px 3px 10px 0px rgba(0,0,0,0.15);
+  display: grid;
+  justify-content: center;
+  align-content: center;
   height: 35px;
-  width: 35px;
+  width: 70px;
+  border-radius: 8px;
+  > div {
+    display: grid;
+    justify-content: center;
+    align-content: center;
+    height: 35px;
+    width: 70px;
+  }
 }
 
 .pallette-list{
+  height: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   row-gap: 15px;
-  column-gap: 15px;;
+  column-gap: 15px;
+  padding-bottom: 50px;
+
 }
 </style>
 
