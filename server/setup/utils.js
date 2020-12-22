@@ -1,5 +1,6 @@
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const fs = require("fs");
 
 async function setupAccessPoint() {
     await exec('mv /etc/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf.original')
@@ -7,7 +8,9 @@ async function setupAccessPoint() {
     await exec('cp /usr/lib/raspiwifi/reset_device/static_files/dnsmasq.conf /etc/')
     await exec('cp /usr/lib/raspiwifi/reset_device/static_files/hostapd.conf.nowpa /etc/hostapd/hostapd.conf')
     await exec('mv /etc/dhcpcd.conf /etc/dhcpcd.conf.original')
-    await exec('cp /usr/lib/raspiwifi/reset_device/static_files/dhcpcd.conf /etc/')
+    await exec('cp /usr/lib/raspiwifi/reset_device/static_files/dhcpcd.conf /etc/');
+    
+    global.db.push("/system/setup/isAccessPoint", true);
     await exec('reboot');
 }
 
@@ -18,6 +21,7 @@ async function setupAPClient() {
     await exec('chmod +x /etc/cron.raspiwifi/apclient_bootstrapper')
     await exec('mv /etc/dnsmasq.conf.original /etc/dnsmasq.conf')
     await exec('mv /etc/dhcpcd.conf.original /etc/dhcpcd.conf')
+    global.db.push("/system/setup/isFinished", true)
     await exec('reboot')
 }
 
@@ -72,4 +76,11 @@ async function scanWifiNetworks() {
     networks.sort((a, b) => b.signalLevel - a.signalLevel)
 
     return networks;
+}
+
+module.exports = {
+    setupAPClient,
+    setupAccessPoint,
+    createWPASupplicant,
+    scanWifiNetworks
 }
