@@ -161,8 +161,13 @@ export default {
       });
     },
     onResize() {
-      var style = getComputedStyle(this.$refs.picker, null);
-      var width = Number(style.getPropertyValue("width").slice(0, -2));
+      const element = document.getElementById("picker");
+      var computedStyle = getComputedStyle(element);
+
+      var elementWidth = element.clientWidth;
+      elementWidth -= parseFloat(computedStyle.paddingLeft) + parseFloat(computedStyle.paddingRight);
+
+      var width = elementWidth;
       this.colorPicker.setOptions({ width })
     }
   },
@@ -205,10 +210,9 @@ export default {
     this.colorPicker.on("input:move", this.onInputMove);
     this.colorPicker.on("input:end", this.onInputEnd);
     this.colorPicker.on("mount", this.onMount);
-    // window.addEventListener('resize', this.onResize);
+    window.addEventListener('resize', this.onResize);
 
     this.colorPicker.setActiveColor(this.$store.state.kelvinIndex)
-    console.log(this.colorPicker)
   },
   beforeUnmount() {
     this.colorPicker.off("input:end", this.onInput);
@@ -220,7 +224,7 @@ export default {
     this.colorPicker.off("input:move", this.onInputMove);
     this.colorPicker.off("input:end", this.onInputEnd);
     this.colorPicker.off("mount", this.onMount);
-    // window.removeEventListener("resize", this.onResize)
+    window.removeEventListener("resize", this.onResize)
   },
   computed: {
     layoutOptions() {

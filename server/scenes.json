@@ -1,18 +1,54 @@
 {
-    "tewstt": {
-        "brightness": 142.79999999999998,
-        "lightState": {
-            "mode": 1,
-            "isKelvin": false,
-            "kelvinIndex": 1,
-            "colors": [
-                "#0400ff",
-                "#f6ff00"
-            ],
-            "duration": 5,
-            "rotate": {
-                "clockwise": true
-            }
-        }
+    "Rozeee<3": {
+        "background": "Purple",
+        "brightness": 127,
+        "textColor": "white",
+        "mode": 0,
+        "isKelvin": false,
+        "kelvinIndex": 0,
+        "colors": [
+            null
+        ],
+        "duration": 5000,
+        "clockwiseRotation": true
+    },
+    "white": {
+        "background": "Purple",
+        "brightness": 10,
+        "textColor": "white",
+        "mode": 0,
+        "isKelvin": false,
+        "kelvinIndex": 0,
+        "colors": [
+            null
+        ],
+        "duration": 5000,
+        "clockwiseRotation": true
+    },
+    "Blueeee": {
+        "background": "Omolon",
+        "brightness": 10,
+        "textColor": "white",
+        "mode": 0,
+        "isKelvin": false,
+        "kelvinIndex": 0,
+        "colors": [
+            "#000000"
+        ],
+        "duration": 5000,
+        "clockwiseRotation": true
+    },
+    "Green!": {
+        "background": "Mojito",
+        "brightness": 10,
+        "textColor": "white",
+        "mode": 0,
+        "isKelvin": false,
+        "kelvinIndex": 0,
+        "colors": [
+            "#00ff1e"
+        ],
+        "duration": 5000,
+        "clockwiseRotation": true
     }
 }

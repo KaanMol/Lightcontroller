@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#node /usr/lib/raspiwifi/reset_device/reset.js &
-
-node /usr/lib/raspiwifi/configuration_app/app.js &
+cd /home/pi/lightcore && node index.js &
 
 hostapd -dd /etc/hostapd/hostapd.conf &

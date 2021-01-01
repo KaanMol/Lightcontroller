@@ -1,0 +1,16 @@
+{
+    "name": "Luma",
+    "short_name": "Luma",
+    "description": "Luma Dashboard",
+    "lang": "nl-NL",
+    "start_url": "/",
+    "scope": "/",
+    "display": "fullscreen",
+    "theme_color": "#bc4e9c",
+    "icons": [
+        {
+          "src": "assets/icon.svg",
+          "sizes": "72x72 96x96 128x128 256x256"
+        }
+      ]
+}

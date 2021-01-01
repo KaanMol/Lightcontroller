@@ -1,7 +1,6 @@
 import iro from '@jaames/iro';
 
 export default function (hexColor) {
-  // console.log(hexColor)
   const {h, s, l} = new iro.Color(hexColor).hsl;
 
   if ((l / 100) < 0.2) return 'Blacks';

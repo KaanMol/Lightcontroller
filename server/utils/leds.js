@@ -1,5 +1,5 @@
-const { calculateFade } = require("../utils/fade");
-const { Color } = require("../utils/color");
+const { calculateFade } = require("./fade");
+const { Color } = require("./color");
 const NUM_LEDS = global.db.getData("/system/pixelCount");
 const TICKS = 200;
 class LEDDriver {
@@ -10,15 +10,16 @@ class LEDDriver {
             this.leds = require('rpi-ws281x-native');
             this.leds.init(NUM_LEDS);
 
-            process.on('SIGINT', function () {
-                leds.reset();
+
+            process.on('SIGINT', () => {
+                global.leds.leds.reset();
                 process.nextTick(function () { process.exit(0); });
             });
         } else {
-            this.leds = require('../utils/led-facade')
+            this.leds = require('./led-facade')
         }
 
-        this.isOn = true;
+        this.isOn = false;
         this.pixelData = new Array(NUM_LEDS);
         this.animation;
         this.mode = LEDDriver.MODE.STATIC;
@@ -26,7 +27,7 @@ class LEDDriver {
         this.rotate = {
             clockwise: true
         }
-        this.brightness = 10;
+        this.brightness = 0;
         this.duration = 5000;
 
         this.setBrightness(this.brightness);
@@ -54,8 +55,12 @@ class LEDDriver {
     }
 
     setMode(mode) {
-        this.mode = LEDDriver.MODE[mode];
-
+        if (typeof mode === "string") {
+            this.mode = LEDDriver.MODE[mode];
+        } else { 
+            this.mode = mode;
+        }
+        
         if (this.mode === LEDDriver.MODE.ROTATE) {
             this.rotate.offset = 0;
         } else if (this.mode === LEDDriver.MODE.FADE) {
@@ -83,7 +88,7 @@ class LEDDriver {
         this._clearAnimation();
         switch (this.mode) {
             case LEDDriver.MODE.STATIC:
-                let breakpoint = NUM_LEDS / this.colors.length;
+                let breakpoint = Math.round(NUM_LEDS / this.colors.length);
                 let colorIndex = 0;
                 for (let i = 0; i < NUM_LEDS; i++) {
                     if (i !== 0 && i % breakpoint === 0) {
@@ -97,6 +102,7 @@ class LEDDriver {
                 for (let i = 0; i < NUM_LEDS; i++) {
                     this.pixelData[i] = this.colors[i % this.colors.length].int;
                 }
+                this.leds.render(this.pixelData);
                 break;
             case LEDDriver.MODE.ROTATE:
                 this._animate(this._animationRotation);
@@ -108,9 +114,9 @@ class LEDDriver {
     }
 
     _animate(animationMethod) {
-        // console.log(this.duration / TICKS)
         const animation = () => {
-            this.animation = setTimeout(animationMethod.bind(this), this.duration / TICKS);
+            animationMethod.bind(this)()
+            this.animation = setTimeout(animation, this.duration / TICKS);
         };
         animation();
     }
@@ -160,7 +166,7 @@ class LEDDriver {
             if (this.rotate.clockwise) {
                 this.pixelData[(i + this.rotate.offset) % NUM_LEDS] = this.colors[colorIndex].int;
             } else {
-                this.pixelData[(i - this.rotate.offset) + NUM_LEDS % NUM_LEDS] = this.colors[colorIndex].int;
+                this.pixelData[(NUM_LEDS - this.rotate.offset + i) % NUM_LEDS] = this.colors[colorIndex].int;
             }
         }
 

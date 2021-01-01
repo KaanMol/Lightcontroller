@@ -4,28 +4,36 @@
             height="100%"
             transition="slide"
             overlayTransition="fade"
+            @closed="closed"
             id="modal">
         <transition :name="`slide-${slideDirection}`">
             <div v-if="page === 0" key="1">
                 <div class="header">
                     <span></span>
                     <span class="title">Instellingen</span>
-                    <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
+                    <button @click="closeModal"><span class="far fa-chevron-down"></span></button>
                 </div>
 
                 <div class="content settings">
-                    <div id="reboot" v-if="$store.state.preferences.rebootNeeded">
+                    <article v-if="$store.state.preferences.rebootNeeded" class="warning">
+                        <i class="far fa-exclamation-triangle"></i>
                         Het systeem moet herstarten om bepaalde instellingen toe te passen.
-                    </div>
+                    </article>
                     <article class="general">
-                        <div class="title">Netwerk <span @click="() => { page = 1 }">Aanpassen</span> </div>
+                        <div class="title">
+                            Netwerk 
+                            <button @click="() => { page = 1 }">
+                                Bewerken 
+                                <span class="far fa-chevron-right"></span>
+                            </button>
+                        </div>
                         <div class="row">
                             <span>Netwerknaam</span>    
                             <span>{{$store.state.preferences.network}}</span>
                         </div>
                         <div class="row">
                             <span>LAN-IP</span>    
-                            <span>192.168.1.47</span>
+                            <span>{{$store.state.preferences.ip}}</span>
                         </div>
                         <div class="row">
                             <span>Hostnaam</span>    
@@ -34,30 +42,47 @@
                     </article>
 
                     <article class="general">
-                        <div class="title">Thuisscherm <span @click="() => { page = 2 }">Aanpassen</span></div>
+                        <div class="title">
+                            Thuisscherm 
+                            <button @click="() => { page = 2 }">
+                                Bewerken 
+                                <span class="far fa-chevron-right"></span>
+                            </button>
+                        </div>
                         <div class="row">
                             <span>Thema</span>    
-                            <span>{{$store.state.preferences.uiTheme}}</span>
+                            <span v-if="$store.state.preferences.uiTheme === 'light'">Licht</span>
+                            <span v-if="$store.state.preferences.uiTheme === 'dark'">Donker</span>
+                            <span v-if="$store.state.preferences.uiTheme === 'auto'">Systeem voorkeur</span>
                         </div>
                         <div class="row">
-                            <span>Achtergrond type</span>    
-                            <span>{{$store.state.preferences.uiType}}</span>
+                            <span>Achtergrond kleur</span>    
+                            <span v-if="$store.state.preferences.uiType === 'white'">Wit</span>
+                            <span v-if="$store.state.preferences.uiType === 'black'">Zwart</span>
+                            <span v-if="$store.state.preferences.uiType === 'gradient'">Kleurovergang</span>
                         </div>
                         <div v-if="$store.state.preferences.uiType === 'gradient'" class="row">
-                            <span>Achtergrond</span>    
+                            <span>Kleurovergang</span>    
                             <span>{{$store.state.preferences.uiOption}}</span>
                         </div>
                     </article>
 
                     <article class="general">
-                        <div class="title">Scenes <span @click="() => { page = 3 }">Aanpassen</span></div>
+                        <div class="title">
+                            Scènes 
+                            <button @click="() => { page = 3 }">
+                                Bewerken 
+                                <span class="far fa-chevron-right"></span>
+                            </button>
+                        </div>
                         <div class="row">
-                            <span>Standaard overgang</span>    
+                            <span>Standaard kleurovergang</span>    
                             <span>{{$store.state.preferences.sceneBackground}}</span>
                         </div>
                         <div class="row">
                             <span>Standaard tekstkleur</span>    
-                            <span>{{$store.state.preferences.sceneText}}</span>
+                            <span v-if="$store.state.preferences.sceneText === 'white'">Wit</span>
+                            <span v-if="$store.state.preferences.sceneText === 'black'">Zwart</span>
                         </div>
                     </article>
 
@@ -66,7 +91,7 @@
 
                         <button @click="reboot">Herstarten</button>
                         
-                        <button @click="() => { page = 4 }">Fabrieksinstellingen</button>
+                        <button @click="() => { page = 4 }">Apparaat resetten</button>
                     </article>    
 
                     <span></span>              
@@ -74,29 +99,35 @@
             </div>
             <div v-if="page === 1" key="2">
                 <div class="header">
-                    <span class="back" @click="() => { page = 0 }"><span class="far fa-chevron-left"></span></span>
-                    <span class="title">Instellingen <span class="far fa-chevron-right"></span> WiFi</span>
-                    <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
+                    <button @click="() => { page = 0; hostname = this.$store.state.preferences.hostname }"><span class="far fa-chevron-left"></span></button>
+                    <span class="title">Netwerk instellingen</span>
+                    <button @click="closeModal"><span class="far fa-chevron-down"></span></button>
                 </div>
 
                 <div class="content">
-                    <div v-if="!hostname.length" class="waning">Hostnaam kan niet leeg zijn</div>
+                    <article v-if="!hostname.length" class="warning">
+                        <i class="far fa-exclamation-triangle"></i>
+                        Hostnaam kan niet leeg zijn
+                    </article>
+                    <article v-if="hostname !== $store.state.preferences.hostname && hostname.length" class="warning">
+                        <i class="far fa-exclamation-triangle"></i>
+                        Indien je een snelkoppeling hebt gemaakt, zal je deze opnieuw moeten maken.
+                    </article>
                     <article>
-                        <div class="setting">
+                        <div class="setting theme hostname">
                             <div class="title">Hostnaam</div>
                             <input type="text" v-model="hostname" maxlength="50" placeholder="Hostnaam">  
+                            <button class="hostname" :disabled="hostname.length === 0 || hostname === $store.state.preferences.hostname" @click="setHostname">Bewerken</button>
                         </div>
-                                     
-                        <!-- <button class="create" :disabled="sceneName === ''" @click="saveScene">Aanmaken</button> -->
-                    </article>     
+                    </article>
                 </div>
             </div>
 
             <div v-if="page === 2" key="3">
                 <div class="header">
-                    <span class="back" @click="() => { page = 0 }"><span class="far fa-chevron-left"></span></span>
-                    <span class="title">Instellingen <span class="far fa-chevron-right"></span> Thuisscherm</span>
-                    <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
+                    <button @click="() => { page = 0 }"><span class="far fa-chevron-left"></span></button>
+                    <span class="title">Thuisscherm instellingen</span>
+                    <button @click="closeModal"><span class="far fa-chevron-down"></span></button>
                 </div>
 
                 <div class="content">
@@ -113,18 +144,18 @@
                             <div class="title">Achtergrondkleur</div>
                             <button @click="() => setTheme('type', 'white')" :class="{ active: $store.state.preferences.uiType === 'white' }">Wit</button>
                             <button @click="() => setTheme('type', 'black')" :class="{ active: $store.state.preferences.uiType === 'black' }">Zwart</button>
-                            <button @click="() => setTheme('type', 'gradient')" :class="{ active: $store.state.preferences.uiType === 'gradient' }">Overgang</button>  
+                            <button @click="() => setTheme('type', 'gradient')" :class="{ active: $store.state.preferences.uiType === 'gradient' }">Kleurovergang</button>  
                         </div>
                     </article> 
                     <article v-if="$store.state.preferences.uiType === 'gradient'">
                         <div class="setting theme">
-                            <div class="title">Overgang keuze</div>
+                            <div class="title">Kleurovergang</div>
                             <div class="row">
-                                <span>Overgang</span>
+                                <span>Huidige kleurovergang</span>
                                 <span>{{$store.state.preferences.uiOption}}</span>
                             </div>
-                            <button class="background-select" @click="() => { page = 5; oldPage = 2; }">
-                                <span class="text">Verander keuze</span> 
+                            <button class="change" @click="() => { page = 5; oldPage = 2; }">
+                                <span class="text">Kleurovergang bewerken</span> 
                                 <span class="far fa-chevron-right"></span>
                             </button>
                         </div>
@@ -134,22 +165,26 @@
 
             <div v-if="page === 3" key="4">
                 <div class="header">
-                    <span class="back" @click="() => { page = 0 }"><span class="far fa-chevron-left"></span></span>
-                    <span class="title">Instellingen <span class="far fa-chevron-right"></span> Scenes</span>
-                    <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
+                    <button @click="() => { page = 0 }"><span class="far fa-chevron-left"></span></button>
+                    <span class="title">Scène instellingen</span>
+                    <button @click="closeModal"><span class="far fa-chevron-down"></span></button>
                 </div>
 
                 <div class="content">
                     <article>
+                        <div class="title">Scène voorbeeld</div>
+                        <button class="gradient" :style="{ color: $store.state.preferences.sceneText, background: getGradient($store.state.preferences.sceneBackground) }">Voorbeeld tekst</button>
+                    </article>
+                    <article>
                         <div class="setting theme">
-                            <div class="title">Achtergrondkleur</div>
+                            <div class="title">Achtergrond</div>
                             <div class="row">
-                                <span>Overgang</span>
+                                <span>Kleurovergang</span>
                                 <span>{{$store.state.preferences.sceneBackground}}</span>
                             </div>
 
-                            <button class="background-select" @click="() => { page = 5; oldPage = 3; }">
-                                <span class="text">Overgang kiezer</span> 
+                            <button class="change" @click="() => { page = 5; oldPage = 3; }">
+                                <span class="text">Kleurovergang bewerken</span> 
                                 <span class="far fa-chevron-right"></span>
                             </button>
                         </div>
@@ -166,9 +201,9 @@
 
             <div v-if="page === 4" key="5">
                 <div class="header">
-                    <span class="back" @click="() => { page = 0 }"><span class="far fa-chevron-left"></span></span>
-                    <span class="title">Fabrieksinstellingen</span>
-                    <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
+                    <button @click="() => { page = 0; preserveScenes = false; preserveDefaults = false; preserveTheme = false; }"><span class="far fa-chevron-left"></span></button>
+                    <span class="title">Apparaat resetten</span>
+                    <button @click="closeModal"><span class="far fa-chevron-down"></span></button>
                 </div>
 
                 <div class="content">
@@ -177,12 +212,12 @@
                         <div class="setting theme">
                             <div class="title">Gegevens behoud</div>
                             <div class="row">
-                                <span>Behoud scenes</span>
+                                <span>Behoud scènes</span>
                                 <input type="checkbox" v-model="preserveScenes">
                             </div>
                         </div>
                         <div class="row">
-                            <span>Behoud scene standaarden</span>
+                            <span>Behoud scène standaarden</span>
                             <input type="checkbox" v-model="preserveDefaults">
                         </div>  
                         <div class="row">
@@ -192,8 +227,8 @@
                     </article> 
                     <article>
                         <div class="setting theme">
-                            <div class="title">Weet u het zeker?</div>
-                            <button class="reset" @click="factoryReset">Ik weet het zeker.</button>
+                            <div class="title">Weet je het zeker?</div>
+                            <button class="reset" @click="factoryReset">Bevestig reset</button>
                         </div>
                     </article> 
                 </div>
@@ -201,9 +236,9 @@
 
             <div v-if="page === 5" key="6">
                 <div class="header">
-                    <span class="back" @click="() => { page = oldPage }"><span class="far fa-chevron-left"></span></span>
-                    <span class="title">Overgang kiezer</span>
-                    <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
+                    <button class="back" @click="() => { page = oldPage }"><span class="far fa-chevron-left"></span></button>
+                    <span class="title">Kleurovergangen</span>
+                    <button class="close" @click="closeModal"><span class="far fa-chevron-down"></span></button>
                 </div>
 
                 <div class="content">
@@ -217,6 +252,7 @@
 
 <script>
 import GradientPicker from "./GradientPicker";
+import { getGradient } from "./utils"
 export default {
     name: 'Settings',
     data() {
@@ -227,10 +263,11 @@ export default {
             hostname: this.$store.state.preferences.hostname,
             preserveScenes: false,
             preserveDefaults: false,
-            preserveTheme: false
+            preserveTheme: false,
         }
     },
     methods: {
+        getGradient,
         handleOption(gradient) {
             if (this.oldPage === 2) {
                 this.setTheme("option", gradient.name);
@@ -253,19 +290,32 @@ export default {
             this.$modal.hide('settingsModal')
             this.page = 0;
         },
+        closed() {
+            this.hostname = this.$store.state.preferences.hostname;
+            this.preserveScenes = false;
+            this.preserveDefaults = false;
+            this.preserveTheme = false;
+            this.page = 0;
+        },
+        setHostname() {
+            this.$socket.client.emit("setHostname", this.hostname);
+            this.hostname = this.$store.state.preferences.hostname;
+            this.page = 0;
+        },
         reboot() {
             this.$socket.client.emit("reboot");
         },
         factoryReset() {
             this.$socket.client.emit("reset", {
                 theme: this.preserveTheme,
-                default: this.preserveDefaults,
+                scene: this.preserveDefaults,
                 scenes: this.preserveScenes
             });
         }
     },
     watch: {
         hostname(newVal) {
+            if (newVal.length > 50) return;
             let re = /[^A-Z0-9]/gi;
             this.$set(this, 'hostname', newVal.replace(re, ''));
         },
@@ -285,8 +335,6 @@ export default {
 
 <style lang="scss" scoped>
 .content.settings {
-    // max-height: calc(100% - 20px) !important;
-    // padding-bottom: 55px;
     display: grid;
     row-gap: 15px;
     grid-template-columns: 1fr;
@@ -296,9 +344,38 @@ export default {
     }
 }
 
+.row {
+    align-items: center;
+}
+
+.change {
+    width: 100%;
+    text-align: left;
+    padding: 10px 20px !important;
+    .far {
+        position: relative;
+        top: 2px;
+        float: right;
+    }
+}
+
 article {
     &.general {
-        row-gap: 5px;
+        row-gap: 10px;
+        .title {
+            button {
+                right: 0;
+                background: var(--buttons); 
+                border-radius: 8px;
+                padding: 10px;
+                float: right;
+                .far {
+                    position: relative;
+                    top: 2px;
+                    margin-left: 7px;
+                }
+            }
+        }
     }
     &.system {
         button {
@@ -307,24 +384,28 @@ article {
                 margin-bottom: 15px;
             }
         }
-        // display: grid;
-        // grid-template-rows: min-content 1fr 1fr;
-        // row-gap: 15px;
     }
     .setting {
         &.theme {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr;    
             row-gap: 10px;
             button {
                 padding: 10px;
+            }
+
+            &.hostname {
+                grid-auto-rows: min-content;
+                button {
+                    margin-top: 30px;
+                }
             }
         }
     }
 }
 
 .reset {
-    background: #D1152C;
+    background: var(--red);
     color: white;
 }
 </style>

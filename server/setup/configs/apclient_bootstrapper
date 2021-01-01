@@ -1,5 +1,3 @@
 #!/bin/bash
 
-#node /usr/lib/raspiwifi/reset_device/reset.js &
-
-#node /usr/lib/raspiwifi/reset_device/connection_monitor.js &
+cd /home/pi/lightcore && node index.js &

@@ -4,6 +4,7 @@
             height="100%"
             transition="slide"
             overlayTransition="fade"
+            @before-close="stateHandler"
             id="modal">
         <div>
             <div class="header">
@@ -12,7 +13,7 @@
                 <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
             </div>
 
-            <div class="content">
+            <div id="picker" class="content">
                 <nav>
                     <button 
                         class="color"
@@ -97,6 +98,10 @@ export default {
             this.colorHandler();
         },
         colorHandler() {
+            if (this.$store.state.activeScene !== "") {
+                this.$store.dispatch("applyScene", "");
+            }
+            
             let response =  {
                 isKelvin: this.$refs.picker.kelvin,
                 kelvinIndex: this.$refs.picker.colorPicker.color.index,
@@ -110,6 +115,7 @@ export default {
                 kelvinIndex: this.$refs.picker.colorPicker.color.index,
                 colors: this.$refs.picker.colorPicker.colors
             }
+
             this.$store.dispatch("setColorsSelf", response)
         },
         setMode(mode) {

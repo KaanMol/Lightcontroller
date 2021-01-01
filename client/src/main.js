@@ -5,17 +5,14 @@ import io from 'socket.io-client';
 import Vuex from 'vuex'
 import iro from "@jaames/iro";
 import vmodal from 'vue-js-modal'
-import vueDebounce from 'vue-debounce'
 
-const socket = io('192.168.1.47');
+// const socket = io(window.location.hostname);
+const socket = io("192.168.1.100");
 
-import { preferences } from "./store/preferences";
+import { preferences, setup } from "./store";
 
 Vue.use(Vuex);
 Vue.use(vmodal);
-Vue.use(vueDebounce)
-
-console.log(preferences);
 
 const MODES = [
   "STATIC",
@@ -26,7 +23,8 @@ const MODES = [
 
 const store = new Vuex.Store({
   modules: {
-    preferences
+    preferences,
+    setup
   },
   state: {
     gradientName: "Shifter",
@@ -46,7 +44,8 @@ const store = new Vuex.Store({
   },
   mutations: {
     SOCKET_SYNC(state, value) {
-      console.log(value)
+      if (!value.isSetup) return;
+      
       state.temperature = value.temperature;
       state.humidity = value.humidity;
       state.power = value.power;
@@ -81,12 +80,29 @@ const store = new Vuex.Store({
       state.isKelvin = value;
     },
     SOCKET_NEWSCENE(state, newScene) {
-      const sceneExists = state.scenes.findIndex(scene => scene.name === newScene.name)
-      console.log(sceneExists);
-      state.scenes.push(newScene);
+        const sceneExists = state.scenes.findIndex(scene => scene.name === newScene.name)
+
+        if (sceneExists > -1) {
+            const scenes = state.scenes;
+            scenes[sceneExists] = newScene;
+            state.scenes = [...scenes];
+        } else {
+            state.scenes.push(newScene);
+        }
+
+        state.activeScene = newScene.name;
+    },
+    SOCKET_REMOVESCENE(state, sceneName) {
+        const sceneExists = state.scenes.findIndex(scene => scene.name === sceneName)
+        if (sceneExists < 0) return;
+
+        const scenes = state.scenes;
+        scenes.splice(sceneExists, 1)
+        state.scenes = [...scenes];
+        state.activeScene = "";
     },
     SOCKET_ACTIVESCENE(state, sceneName) {
-      console.log(sceneName);
+      state.activeScene = "";
       state.activeScene = sceneName;
     },
     SOCKET_COLORS(state, value) {
@@ -118,7 +134,15 @@ const store = new Vuex.Store({
       this._vm.$socket.client.emit("power", power);
       commit("SOCKET_POWER", power)
     },
-    setBrightness({ commit }, { brightness }) {
+    setBrightness({ commit, state }, { brightness }) {
+        if (brightness === "0") {
+            this._vm.$socket.client.emit("power", false);
+            commit("SOCKET_POWER", false)
+        } else if (brightness !== 0 && !state.power) {
+            this._vm.$socket.client.emit("power", true);
+          commit("SOCKET_POWER", true)
+        }
+
       this._vm.$socket.client.emit("brightness", brightness);
       commit("SOCKET_BRIGHTNESS", brightness)
     },
@@ -145,6 +169,14 @@ const store = new Vuex.Store({
     createScene({ commit }, scene) {
       this._vm.$socket.client.emit("createScene", scene);
       commit("SOCKET_NEWSCENE", scene)
+    },
+    editScene({ commit }, scene) {
+        this._vm.$socket.client.emit("editScene", scene);
+        commit("SOCKET_NEWSCENE", scene)
+    },
+    removeScene({ commit }, scene) {
+        this._vm.$socket.client.emit("removeScene", scene);
+        commit("SOCKET_REMOVESCENE", scene)
     },
     applyScene({ commit }, sceneName) {
       this._vm.$socket.client.emit("applyScene", sceneName);

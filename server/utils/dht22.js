@@ -8,19 +8,20 @@ class Sensor {
         if (global.db.getData("/system/isProduction")) {
             this.sensor = require("node-dht-sensor");
         } else {
-            this.sensor = require("./utils/dht-facade");
+            this.sensor = require("./dht-facade");
         }
 
-        setInterval(() => this.update(), 8000)
+        setInterval(this.update.bind(this), 8000)
     }
 
     update() {
-        this.sensor.read(this.sensor.DHT22, SENSOR_PIN, function(err, temperature, humidity) {
+        const self = this;
+        this.sensor.read(22, 4, (err, temperature, humidity) => {
             if (!err) {
-                this.temperature = temperature.toFixed(1);
-                this.humidity = humidity.toFixed(1);
+                self.temperature = temperature.toFixed(1);
+                self.humidity = humidity.toFixed(1);
             }
-        }.bind(this));
+        });
     }
 }
 

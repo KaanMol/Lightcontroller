@@ -29,16 +29,15 @@ module.exports = {
             .getCharacteristic(Characteristic.Saturation).updateValue(color.s);
     },
     setPower: (value) => {
-        console.log(value)
         lightService
             .getCharacteristic(Characteristic.On).updateValue(value);
     },
-    service: () => {
+    startService: () => {
         lightAccessory.getService(Service.AccessoryInformation)
             .setCharacteristic(Characteristic.Manufacturer, config.manufacturer)
             .setCharacteristic(Characteristic.Model, config.model)
             .setCharacteristic(Characteristic.SerialNumber, config.serialNumber)
-            .setCharacteristic(Characteristic.FirmwareRevision, require("./package.json").version)
+            .setCharacteristic(Characteristic.FirmwareRevision, require("../package.json").version)
         
         lightService
             .getCharacteristic(Characteristic.On)
@@ -123,7 +122,7 @@ module.exports = {
             category: hap.Categories.LIGHTBULB,
         });
 
-        console.log(`Setup URL: ${lightAccessory.setupURI()}`);
-        console.log("Accessory setup finished!");
+        // console.log(`Setup URL: ${lightAccessory.setupURI()}`);
+        // console.log("Accessory setup finished!");
     }
 }

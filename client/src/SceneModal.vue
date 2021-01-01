@@ -4,19 +4,24 @@
             height="100%"
             transition="slide"
             overlayTransition="fade"
+            @closed="closed"
             id="modal">
         <transition :name="`slide-${slideDirection}`">
             <div v-if="page === 0" key="1">
                 <div class="header">
                     <span></span>
-                    <span class="title">Scene's</span>
+                    <span class="title">Scènes</span>
                     <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
                 </div>
 
                 <div class="content scenes">
-                    <button id="create" @click="openCreate">
+                    <button @click="openCreate">
                         <i class="fas fa-plus"></i>
-                        Scene aanmaken
+                        Aanmaken
+                    </button>
+                    <button v-if="$store.state.activeScene !== ''" @click="openEdit">
+                        <i class="fas fa-pencil"></i>
+                        Bewerken
                     </button>
                     <div class="list">
                         <button
@@ -24,7 +29,8 @@
                             v-for="(scene, index) in $store.state.scenes" :key="`${scene.name}${index}`" 
                             :style="{ background: getGradient(scene.background), color: scene.textColor }"
                             :class="{ active: $store.state.activeScene === scene.name }"
-                            @click="() => applyScene(scene.name)">{{scene.name}}</button>
+                            :disabled="$store.state.activeScene === scene.name"
+                            @click="() => applyScene(scene.name)"><i v-if="$store.state.activeScene === scene.name" class="far fa-chevron-right"></i> <span>{{scene.name}}</span></button>
                     </div>
                 </div>
             </div>
@@ -32,29 +38,29 @@
 
             <div v-if="page === 1" key="2">
                 <div class="header">
-                    <span class="back" @click="() => { page = 0 }"><span class="far fa-chevron-left"></span></span>
-                    <span class="title">Scene aanmaken</span>
-                    <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
+                    <button @click="() => { page = 0 }"><span class="far fa-chevron-left"></span></button>
+                    <span class="title">Scène aanmaken</span>
+                    <button @click="closeModal"><span class="far fa-chevron-down"></span></button>
                 </div>
                 <div class="content create">
                     <div v-if="sceneExists()" class="warning">
                         <span class="far fa-exclamation-triangle"></span>
-                        Er bestaat al een scene met de naam {{sceneName}}. Deze zal worden overschreven.
+                        Er bestaat al een scène met de naam {{sceneName}}. Deze zal worden overschreven.
                     </div>
                     <article>
                         <div class="title">Voorbeeld</div>
-                        <button class="gradient" :style="{ color: textColor, background: getGradient(backgroundName) }">{{sceneName === "" ? "Scene naam" : sceneName}}</button>
+                        <button class="gradient" :style="{ color: textColor, background: getGradient(backgroundName) }">{{sceneName === "" ? "Scène naam" : sceneName}}</button>
                     </article>
 
                     <article>
                         <div class="setting">
-                            <div class="title">Scenenaam</div>
-                            <input type="text" v-model="sceneName" placeholder="Scene naam">  
+                            <div class="title">Scènenaam</div>
+                            <input type="text" v-model="sceneName" placeholder="Scène naam">  
                         </div>
 
                         <div class="setting">
                             <div class="title">Achtergrond</div>
-                            <button class="background-select" @click="() => { page = 2 }">
+                            <button class="background-select" @click="() => { page = 3 }">
                                 <span class="text">Selecteer achtergrond</span> 
                                 <span class="far fa-chevron-right"></span>
                             </button>
@@ -66,15 +72,63 @@
                             <button :class="{ active: textColor === 'black' }" @click="() => {textColor = 'black'}">Zwart</button>
                         </div>
                                      
-                        <button class="create" :disabled="sceneName === ''" @click="saveScene">Aanmaken</button>
+                        <button class="create" :disabled="sceneName === ''" @click="createScene">Aanmaken</button>
                     </article>
                 </div>
             </div>
             <div v-if="page === 2" key="3">
+                
                 <div class="header">
-                    <span class="back" @click="() => { page = 1 }"><span class="far fa-chevron-left"></span></span>
-                    <span class="title">Gradients</span>
-                    <span class="close" @click="closeModal"><span class="far fa-chevron-down"></span></span>
+                    <button @click="() => { page = 0 }"><span class="far fa-chevron-left"></span></button>
+                    <span class="title">Scène bewerken</span>
+                    <button @click="closeModal"><span class="far fa-chevron-down"></span></button>
+                </div>
+                <div class="content edit">
+                    <article>
+                        <div class="title">Voorbeeld</div>
+                        <button class="gradient" :style="{ color: textColor, background: getGradient(backgroundName) }">{{sceneName === "" ? "Scène naam" : sceneName}}</button>
+                    </article>
+
+                    <article>
+                        <div class="setting">
+                            <div class="title">Scènenaam</div>
+                            <input type="text" v-model="sceneName" placeholder="Scène naam">  
+                        </div>
+
+                        <div class="setting">
+                            <div class="title">Achtergrond</div>
+                            <button class="background-select" @click="() => { page = 3 }">
+                                <span class="text">Selecteer achtergrond</span> 
+                                <span class="far fa-chevron-right"></span>
+                            </button>
+                        </div>
+
+                        <div class="setting font-color">
+                            <div class="title">Tekstkleur</div>
+                            <button :class="{ active: textColor === 'white' }" @click="() => {textColor = 'white'}">Wit</button>
+                            <button :class="{ active: textColor === 'black' }" @click="() => {textColor = 'black'}">Zwart</button>
+                        </div>
+                                     
+                        <button class="create" :disabled="sceneName === ''" @click="editScene">Bewerken</button>
+                    </article>
+
+                    <article>
+                        <div class="setting">
+                            <div class="title">Verwijderen</div>
+                            <button @click="removeScene" class="remove">
+                                <i class="far fa-trash-alt"></i> 
+                                <span>Verwijder {{sceneName}}</span>
+                            </button>
+                        </div>
+                    </article>
+                    <span class="filler"></span>
+                </div>
+            </div>
+            <div v-if="page === 3" key="4">
+                <div class="header">
+                    <button @click="handleReturn"><span class="far fa-chevron-left"></span></button>
+                    <span class="title">Overgang kiezer</span>
+                    <button @click="closeModal"><span class="far fa-chevron-down"></span></button>
                 </div>
 
                 <div class="content gradients">
@@ -94,9 +148,9 @@ export default {
     data() {
         return {
             page: 0,
+            edit: false,
             sceneName: "",
             slideDirection: "left",
-            sceneFavorite: false,
             backgroundName: "",
             textColor: "white"
         }
@@ -104,13 +158,30 @@ export default {
     methods: {
         getGradient,
         openCreate() {
+            this.edit = false;
             this.backgroundName = this.$store.state.preferences.sceneBackground;
             this.textColor = this.$store.state.preferences.sceneText;
+            this.sceneName = "";
             this.page = 1;
         },
+        openEdit() {
+            this.edit = true;
+            const currentScene = this.$store.state.scenes.filter(scene => scene.name === this.$store.state.activeScene)[0]
+            this.backgroundName = currentScene.background;
+            this.textColor = currentScene.textColor;
+            this.sceneName = currentScene.name;
+            this.page = 2;
+        },
+        handleReturn() {
+            if (this.edit) {
+                this.page = 2;
+            } else {
+                this.page = 1;
+            }
+        },        
         handleBackground(gradient) {
             this.backgroundName = gradient.name;
-            this.page = 1;
+            this.handleReturn()
         },
         openModal() {
             this.$modal.show('sceneModal')
@@ -119,17 +190,32 @@ export default {
             this.$modal.hide('sceneModal')
             this.page = 0;
         },
-        saveScene() {
-            console.log("12")
-            this.$store.dispatch("saveScene", { name: this.sceneName, background: this.backgroundName, textColor: this.textColor });
+        closed() {
+            this.page = 0;
+            this.edit = false;
+            this.sceneName = "";
+            this.backgroundName = "";
+            this.textColor = "white";
+            this.slideDirection = "none";
+        },
+        createScene() {
+            this.$store.dispatch("createScene", { name: this.sceneName, background: this.backgroundName, textColor: this.textColor });
             this.sceneName = "";
             this.backgroundName = this.$store.state.preferences.sceneBackground;
             this.textColor = this.$store.state.preferences.sceneText;
             this.page = 0;
         },
+        editScene() {
+            this.$store.dispatch("editScene", { name: this.sceneName, background: this.backgroundName, textColor: this.textColor });
+            this.page = 0;
+        },
+        removeScene() {
+            this.$store.dispatch("removeScene", this.sceneName);
+            this.page = 0;
+        },
         applyScene(scene) {
+            this.slideDirection = "none";
             this.$store.dispatch("applyScene", scene);
-            this.closeModal()
         },
         sceneExists() {
             const scenes = this.$store.state.scenes.find(scene => scene.name.toLowerCase() === this.sceneName.toLowerCase());
@@ -153,28 +239,47 @@ export default {
 
 <style lang="scss" scoped>
     button {
-        // font-size: 14px;
-        outline: 0;
-        border: none;
-        background: var(--background);
-        border-radius: 8px;
-    }
-    .content.scenes {
-        grid-template-rows: 50px 1fr;
-
-        .list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-auto-rows: min-content;
-            column-gap: 10px;
-            row-gap: 10px;
-            button {
-                border: none;
-            }
+        .fas {
+            margin-right: 10px;
         }
     }
 
-    .content.create {
+    .content.scenes {
+        grid-template-rows: min-content 1fr;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 10px;
+
+        .list {
+            grid-column: 1 / 3;
+            display: grid;
+            grid-auto-rows: min-content;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 10px;
+            row-gap: 10px;
+            .gradient {
+                align-items: center;
+                grid-template-columns: 30px 1fr;
+                border: none;
+
+                &:disabled { 
+                    opacity: 1;
+                }
+                
+                span {
+                    grid-row: 1;
+                    grid-column: 1 / 3;
+                }
+
+                .far {
+                    grid-row: 1;
+                    grid-column: 1;
+                    font-size: 14px;
+                }
+            }        
+        }
+    }
+
+    .content.create, .content.edit {
         grid-auto-rows: min-content;
         article {
             display: grid;
@@ -192,9 +297,10 @@ export default {
                 .background-select {
                     width: 100%;
                     text-align: left;
+                    padding: 10px 20px;
                     .far {
                         position: relative;
-                        top: 1px;
+                        top: 2px;
                         float: right;
                     }
                 }
@@ -207,92 +313,22 @@ export default {
                         grid-row: 2;
                     }
                 }
+
+                .remove {
+                    width: 100%;
+                    background: var(--red);
+                    color: white;
+                    font-size: 14px;
+                    .far {
+                        font-size: 14px;
+                        margin-right: 15px;
+                    }
+                }
             }
-            // padding: 15px;
-            // border-radius: 8px;
-            // background: var(--background);
-            // row-gap: 10px;
-            // span {
-            //     font-weight: bold;
-            // }
 
             .gradient {
                 width: 100%;
             }
         }
     }
-
-    .content.gradients {
-        
-    }
-    // #app + #modal {
-    //     overflow: hidden;
-    // }
-    /* body.modal-open {
-        overflow: hidden;
-    } */
-    
-
-    // .preview {
-    //     background: var(--background);
-    //     padding: 15px;
-    //     border-radius: 12px;
-    // }
-
-    // .preview > span {
-    //     display: block;
-    //     font-weight: bold;
-    //     margin-bottom: 15px;
-    // }
-
-    // .preview > button {
-    //     width: 100%;
-    // }
-
-    // .name {
-    //     margin-top: 15px;
-    // }
-
-    // .name > span {
-    //     /* font-weight: bold; */
-    // }
-    // .name > input {
-    //     height: 35px;
-    //     border-radius: 12px;
-    //     border: solid 1px lightgray
-    // }
-
-    // .content.list {
-    //     grid-template-rows: 45px 1fr;
-    // }
-
-    // .content.create {
-    //     grid-template-rows: min-content min-content min-content min-content min-content;
-    // }
-
-    // .content > #create {
-    //     border-radius: 8px;
-    //     border: none;
-    //     background: aqua;
-    //     outline: 0;
-    //     height: 45px;
-    // }
-    
-    // .content > #scenes {
-    //     display: grid;
-    //     grid-template-columns: 1fr 1fr;
-    //     grid-template-rows: min-content;
-    //     column-gap: 10px;
-    //     row-gap: 10px;
-    // }
-
-    // .content > #scenes > button, .example {
-    //     box-shadow: 2px 3px 10px 0px rgba(0,0,0,0.15);
-    //     outline: 0;
-    //     padding: 20px;
-    //     border-radius: 12px;
-    //     border: none;
-    //     background:#f80759;
-    //     color: white;
-    // }
 </style>

@@ -1,12 +1,12 @@
 <template>
-    <div id="page" :theme="$store.state.preferences.uiTheme" :style="{ background }"> 
-      <main v-if="$store.state.loaded" :key="1">
+    <div id="page" :theme="$store.state.preferences.uiTheme" :style="{ background }">
+      <main v-if="$store.state.loaded">
         <ColorModal ref="colors"></ColorModal> 
         <SceneModal ref="scenes"></SceneModal>
         <SettingsModal ref="settings"></SettingsModal>
 
         <header>
-          <span class="title">Goedenavond</span>
+          <span class="title">{{this.headerText}}</span>
           <span @click="openSettingsModal" class="far fa-cog"></span>
         </header>
 
@@ -36,7 +36,7 @@
                   <span>Helderheid</span>     
                   <span>{{brightness}}%</span>
               </div>
-              <input @input="setBrightness" id="test" type="range" min="1" max="100" v-bind:value="brightness" class="slider">
+              <input @input="setBrightness" id="test" type="range" min="0" max="100" v-bind:value="brightness" class="slider">
           </div>
 
             <template v-if="$store.state.power">
@@ -69,12 +69,14 @@
             </template>
         </section>
       </main>
-      <Loading v-else :key="2"/>
+      <Loading v-else-if="!$store.state.loaded && $store.state.setup.completed" />
+      <Setup v-else />
     </div>
 </template>
 
 <script>
 import Loading from './components/Loading.vue'
+import Setup from './components/Setup.vue'
 import ColorModal from './PickerModal.vue'
 import SceneModal from './SceneModal.vue'
 import SettingsModal from './SettingsModal.vue'
@@ -84,13 +86,27 @@ export default {
     name: 'App',
     components: {
         Loading,
+        Setup,
         ColorModal,
         SceneModal,
         SettingsModal
     },
     data() {
         return {
-            modalOpen: false
+            modalOpen: false,
+            headerText: "Goedemorgen"
+        }
+    },
+    mounted() {
+        const today = new Date()
+        const curHr = today.getHours();
+
+        if (curHr >= 6 && curHr < 12) {
+            this.headerText = "Goedemorgen";
+        } else if (curHr >= 12 && curHr < 18) {
+            this.headerText = "Goedemiddag";
+        } else {
+            this.headerText = "Goedenavond";
         }
     },
     computed: {
@@ -106,7 +122,7 @@ export default {
             if (type === "gradient") {
                 return getGradient(this.$store.state.preferences.uiOption);
             } else if (type === "white") {
-                return `#F2F2F2`;
+                return `#f2f2f2`;
             } else {
                 return `#1e1e1e`;
             }
@@ -117,15 +133,31 @@ export default {
             this.$store.dispatch("setPower", { power: !this.$store.state.power });
         },
         setMode(mode) {
+            if (this.$store.state.activeScene !== "") {
+                this.$store.dispatch("applyScene", "");
+            }
+            
             this.$store.dispatch("setMode", { mode });
         },
         setDuration(event) {
+            if (this.$store.state.activeScene !== "") {
+                this.$store.dispatch("applyScene", "");
+            }
+            
             this.$store.dispatch("setDuration", { duration: event.target.value });
         },
         setBrightness(event) {
+            if (this.$store.state.activeScene !== "") {
+                this.$store.dispatch("applyScene", "");
+            }
+
             this.$store.dispatch("setBrightness", { brightness: event.target.value });
         },
         setClockwiseRotation(clockwiseRotation) {
+            if (this.$store.state.activeScene !== "") {
+                this.$store.dispatch("applyScene", "");
+            }
+
             this.$store.dispatch("setClockwiseRotation", { clockwiseRotation });
         },
         openColorPicker() {
@@ -149,28 +181,33 @@ export default {
 @import url('./assets/style/fonts.css');
 
 @mixin light {
-    --primary: white;
-    --secondary: #f7f7f7;
-    --background: rgba(255, 255, 255,0.5);
-    --buttons: rgba(255, 255, 255,0.7);
-    // --background: rgba(255, 255, 255,0.5);
-    --modal-cards: rgba(255, 255, 255,0.3);
+    --primary: #fafafa;
+    --secondary: 	#fafafa;
+    --background: rgba(229,229,229,0.5);
+    --secondary-bg: rgba(229,229,229,0.7);
+    --buttons: rgba(250,250,250,0.6);
+    --modal-cards: rgba(255, 255, 255,0.4);
     --modal: rgba(255, 255, 255,0.4);
-    --color: #2c3e50;
+    --color: #000000;
 }
-
+ 
 @mixin dark {
-    --primary:#282b30;
-    --secondary:	#424549;
-    --buttons: rgba(66,69,73,0.7);
-    --background: rgba(45,45,48,0.5);
-    --modal-cards: rgba(66,69,73,0.4);
+    --primary:	#161618;
+    --secondary: #282b30;
+    --buttons: rgba(22,22,24,0.6);
+    --background: rgba(45,45,48,0.4);
+    --modal-cards: rgba(33,33,36,0.4);
 
-    --modal: rgba(45,45,48,0.5);
+    --secondary-bg: rgba(45,45,48,0.7);
+
+    --modal: rgba(129,129,129 ,0.4);
     --color: white;
 }
 
-$box-shadow: 2px 3px 10px 0px rgba(0,0,0,0.15);
+:root {
+    --red: #D1152C;
+    --box-shadow: 2px 3px 10px 0px rgba(0,0,0,0.15)
+}
 
 [theme="light"] {
   @include light;
@@ -197,14 +234,7 @@ $box-shadow: 2px 3px 10px 0px rgba(0,0,0,0.15);
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
 }
 
-header {
-    /* ... */
-    /* Status bar height on iOS 10 */
-    
-}
-
 html, body, #page {
-
   width: 100%;
   touch-action: manipulation;
   font-size: 16px;
@@ -236,30 +266,30 @@ main {
     grid-template-areas: "header"
                         "temperature"
                         "controls";
+        &.setup {
+            grid-auto-rows: min-content;
+            grid-template-areas: "header"
+                                "content";
+        }
 }
 
 header {
-  // padding-top: 20px;
-    /* Status bar height on iOS 11.0 */
-    // padding-top: constant(safe-area-inset-top);
-    /* Status bar height on iOS 11+ */
-    // 
-  grid-area: header;
-  display: grid;
-  grid-template-columns: 1fr min-content;
-  grid-auto-rows: min-content min-content, min-content;
-  align-items: center;
+    grid-area: header;
+    display: grid;
+    grid-template-columns: 1fr min-content;
+    grid-auto-rows: min-content min-content, min-content;
+    align-items: center;
 
-  .title {
-    font-size: 2em;
-  }
-  .far {
-    font-size: 1.8em;
-  }
+    .title {
+        font-size: 2em;
+    }
+    .far {
+        font-size: 1.8em;
+    }
 }
 
 section {
-    box-shadow: $box-shadow;
+    box-shadow: var(--box-shadow);
     background: var(--background);
     border-radius: 12px;
     padding: 20px;
@@ -268,43 +298,61 @@ section {
 
 
 @media (min-width: 768px) {
-  main {
-    grid-template-columns: 60px 1fr 60px;
-    grid-template-rows: min-content min-content min-content;
-    grid-template-areas: ". header ."
-                         ". temperature ."
-                         ". controls .";
-  }
+    main {
+        grid-template-columns: 60px 1fr 60px;
+        grid-template-rows: min-content min-content min-content;
+        grid-template-areas: ". header ."
+                            ". temperature ."
+                            ". controls .";
+
+        &.setup {
+            grid-template-rows: min-content min-content;
+            grid-template-areas: ". header ."
+                                ". content .";
+        }
+    }
+
+    #modal {
+        display: grid;
+        grid-template-columns: 60px 1fr 60px;
+        .vm--modal {
+            grid-column: 2;
+        }
+    }
 }
 
 @media (min-width: 1024px) {
-    main {
+    main, #modal {
         grid-template-columns: 1fr 2fr 1fr;
     }
 }
 
 @media (min-width: 1280px) {
-    main {
+    main, #modal {
         grid-template-columns: auto 600px auto;
     }
 }
 
 input[type="text"] {
-    background: var(--background);
+    color: var(--color);
+    background: var(--buttons);
     border: none;
     border-radius: 8px;
     padding: 10px 15px;
     outline: 0;
     width: 100%;
-    box-shadow: 2px 3px 10px 0px rgba(0,0,0,0.15);
+    box-shadow: var(--box-shadow);
     font-size: 16px;
     &:focus {
         background: var(--primary)
     }
+    &:disabled {
+        opacity: 0.8;
+    }
 }
 
 button {
-    box-shadow: $box-shadow;
+    box-shadow: var(--box-shadow);
     font-size: 14px;
     outline: 0;
     background: var(--buttons);
@@ -324,16 +372,24 @@ button {
     }
 
     &:disabled {
-        opacity: 0.3;
+        opacity: 0.4;
     }
 }
 
 .danger {
-    box-shadow: 2px 3px 10px 0px rgba(0,0,0,0.15);
+    box-shadow: var(--box-shadow);
     background: #D1152C;
     padding: 15px;
     color: white;
     border-radius: 8px;
+}
+
+.warning {
+    background: #FFCC00;
+    color: black; 
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    align-items: center;
 }
 
 section.temperature {
@@ -371,7 +427,7 @@ section.temperature {
 .controls {
     grid-area: controls;
     display: grid;
-    row-gap: 10px;
+    row-gap: 20px;
 }
 
 #power {
@@ -401,7 +457,7 @@ article {
             float: right;
         }
     }
-    box-shadow: 2px 3px 10px 0px rgba(0,0,0,0.15);
+    box-shadow: var(--box-shadow);
     padding: 15px;
     border-radius: 8px;
     background: var(--modal-cards);
@@ -438,22 +494,34 @@ article {
             display: grid;
             grid-template-rows: 50px 1fr;
             > .header {
-                padding: 15px;
+                padding: 5px;
                 display: grid;
-                grid-template-columns: 30px 1fr 30px;
+                grid-template-columns: 40px 1fr 40px;
+                column-gap: 5px;
+                align-items: center;
                 >.title {
                     grid-column: 2;
                     font-size: 18px;
-                    font-weight: bold; 
+                    font-weight: bold;
+
+                }
+
+                button {
+                    background: none;
+                    box-shadow: none;
                 }
             }
             .content {
                 display: grid;
                 row-gap: 10px;
-                padding: 15px 15px 0 15px;
+                padding: 0px 15px;
                 overflow: auto;
                 max-height: calc(100% - 20px);
                 grid-auto-rows: min-content;
+            }
+
+            span.filler {
+                height: calc(40px + env(safe-area-inset-bottom));
             }
         }
     }
@@ -491,34 +559,23 @@ article {
     }
 }
 
-// #test {
-//   background: linear-gradient(to right, #82CFD0 0%, #82CFD0 50%, #fff 50%, #fff 100%);
-//   border: solid 1px #82CFD0;
-//   border-radius: 8px;
-//   height: 7px;
-//   width: 356px;
-//   outline: none;
-//   transition: background 450ms ease-in;
-//   -webkit-appearance: none;
-// }
-
 .slider {
   -webkit-appearance: none;
   appearance: none;
   height: 15px;
-  background: var(--secondary);
+  background: var(--secondary-bg);
+//   box-shadow: var(--box-shadow);
   outline: none;
   border-radius: 25px;
 } 
 
-/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
 .slider::-webkit-slider-thumb {
-  -webkit-appearance: none; /* Override default look */
+  -webkit-appearance: none;
   appearance: none;
-  width: 25px; /* Set a specific slider handle width */
-  height: 25px; /* Slider handle height */
-  background: var(--primary); /* Green background */
-  cursor: pointer; /* Cursor on hover */
+  width: 25px;
+  height: 25px;
+  background: var(--primary);
+  cursor: pointer;
   border-radius: 100%;
   border: none;
 }
@@ -526,12 +583,28 @@ article {
 .slider::-moz-range-thumb {
     border: none;
     border-radius: 100%;
-    width: 25px; /* Set a specific slider handle width */
-    height: 25px; /* Slider handle height */
-    background: var(--primary); /* Green background */
-    cursor: pointer; /* Cursor on hover */
+    width: 25px;
+    height: 25px;
+    background: var(--primary);
+    cursor: pointer;
 }
 
+::-webkit-scrollbar {
+  width: 5px;
+}
 
+::-webkit-scrollbar-track {
+    border-radius: 12px;
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+  background: var(--buttons);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
 
 </style>

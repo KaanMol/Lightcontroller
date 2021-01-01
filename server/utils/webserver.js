@@ -1,15 +1,16 @@
 const express = require("express");
 const app = express();
 const http = require('http').createServer(app);
-const Scenes = require("../core/scenes");
-const system = require("../utils/system");
+const Scenes = require("./scenes");
+const system = require("./system");
+const { Color } = require("./color");
 
 global.io = require('socket.io')(http, {
     cors: {
         origin: '*'
     }
 });
-const homekit = require("../homekit");
+const homekit = require("./homekit");
 /**
  * Serve static webpage to root
  */
@@ -22,34 +23,41 @@ app.use(express.static("public"))
 
 const scenes = new Scenes();
 
+async function sync() {
+    const preferences = global.db.getData("/preferences");
+        
+    const data = {
+        isSetup: true,
+        temperature: global.sensor.temperature,
+        humidity: global.sensor.humidity,
+        power: global.leds.isOn,
+        brightness: Math.round(global.leds.brightness / 2.55),
+        activeScene: global.state.activeScene,
+        lightState: {
+            colors: global.state.colors,
+            duration: global.leds.duration / 1000,
+            isKelvin: global.state.isKelvin,
+            kelvinIndex: global.state.kelvinIndex,
+            mode: global.leds.mode,
+            rotate: {
+                clockwise: global.leds.rotate.clockwise
+            }
+        },
+        preferences: {
+            ...preferences,
+            rebootNeeded: global.state.rebootNeeded,
+            hostname: await system.getHostname(),
+            ip: await system.getIP()
+        },
+        scenes: scenes.getCollection()
+    }
+
+    return data;
+}
+
 io.on('connection', (socket) => {
     socket.on("sync", async () => {
-        const preferences = global.db.getData("/preferences");
-        preferences.rebootNeeded = false;
-        preferences.hostname = await system.getHostname();
-        preferences.ip = await system.getIP();
-
-        const data = {
-            temperature: global.sensor.temperature,
-            humidity: global.sensor.humidity,
-            power: global.leds.isOn,
-            brightness: Math.round(global.leds.brightness / 2.55),
-            activeScene: global.state.activeScene,
-            lightState: {
-                colors: global.state.colors,
-                duration: global.leds.duration / 1000,
-                isKelvin: global.state.isKelvin,
-                kelvinIndex: global.state.kelvinIndex,
-                mode: global.leds.mode,
-                rotate: {
-                    clockwise: global.leds.rotate.clockwise
-                }
-            },
-            preferences,
-            scenes: scenes.getCollection()
-        }
-
-        socket.emit("sync", data)
+        socket.emit("sync", await sync())
     });
 
     setInterval(() => {
@@ -66,7 +74,6 @@ io.on('connection', (socket) => {
             global.leds.turnOff();
         }
 
-        console.log(turnOn)
         homekit.setPower(turnOn);
 
         socket.broadcast.emit("power", turnOn);
@@ -74,8 +81,10 @@ io.on('connection', (socket) => {
 
     socket.on("brightness", (brightness) => {
         global.leds.setBrightness(Math.round(brightness * 2.55));
+        
         homekit.setBrightness(brightness);
         socket.broadcast.emit("brightness", brightness);
+
     });
 
     socket.on("colors", (value) => {
@@ -85,11 +94,17 @@ io.on('connection', (socket) => {
 
         if (global.state.isKelvin) {
             global.leds.mode = 0;
-            global.leds.setColors([value.colors[global.state.kelvinIndex]])
+            let kelvinColor = new Color(value.colors[global.state.kelvinIndex]["$"]).kelvin;
+            if (kelvinColor > 9000) {
+                kelvinColor = 9000;
+            } else if (kelvinColor < 4000) {
+                kelvinColor = 4000;
+            }
+            global.leds.setColors([new Color(Color.kelvinToRgb(kelvinColor))])
         } else {
             global.leds.setColors(value.colors)
         }
-        // console.log(value.colors[value.kelvinIndex]);
+
         homekit.setColor(value.colors[value.kelvinIndex].$)
 
         socket.broadcast.emit("colors", value);
@@ -124,29 +139,52 @@ io.on('connection', (socket) => {
             duration: global.leds.duration,
             clockwiseRotation: global.leds.rotate.clockwise
         });
-
+        
+        global.state.activeScene = scene.name;
         socket.broadcast.emit("newScene", scene);
     });
 
-    socket.on("applyScene", (sceneName) => {
-        const scene = scenes.getNode(sceneName);
+    socket.on("editScene", (scene) => {
+        scenes.editScene(scene.name, {
+            textColor: scene.textColor,
+            background: scene.background
+        });
+        
+        socket.broadcast.emit("newScene", scene);
+    });
+
+    socket.on("removeScene", (scene) => {
+        scenes.removeScene(scene);
+
+        io.emit("activeScene", "");
+        socket.broadcast.emit("removeScene", scene);
+    });
+
+    socket.on("applyScene", async (sceneName) => {
+        if (sceneName === "") {
+            global.state.activeScene = "";
+            socket.broadcast.emit("activeScene", "");
+            return;
+        }
+
+        const scene = { ...scenes.getNode(sceneName)};
         global.state.activeScene = sceneName;
         global.state.isKelvin = scene.isKelvin;
         global.state.kelvinIndex = scene.kelvinIndex;
         global.state.colors = scene.colors;
-        global.leds.colors = scene.colors;
         global.leds.duration = scene.duration;
         global.leds.rotate.clockwise = scene.clockwiseRotation;
         global.leds.setBrightness(scene.brightness);
+        global.leds.setColors(scene.colors);
         global.leds.setMode(scene.mode);
 
-        socket.broadcast.emit("activeScene", sceneName);
+        io.emit("sync", await sync());
     });
-
+    
     socket.on("setHostname", async (hostname) => {
         global.state.rebootNeeded = true;
         await system.setHostname(hostname);
-        socket.broadcast.emit("rebootNeeded", true);
+        io.emit("rebootNeeded", true);
     });
 
     socket.on("theme", ({ type, value }) => {
@@ -160,8 +198,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on("reboot", () => {
-        console.log("reboot")
-        // setTimeout(system.reboot, 5000);
+        setTimeout(system.reboot, 5000);
+    });
+
+    socket.on("reset", async (preserve) => {
+        await system.reset(preserve);
     });
 
 });

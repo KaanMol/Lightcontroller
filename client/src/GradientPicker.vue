@@ -16,7 +16,7 @@
         :key="`${gradient}${index}`" 
         :gradient="gradient"
         :updateGradient="emit" />
-
+      <span class="filler"></span>
     </div>
   </div>
 </template>
@@ -25,20 +25,16 @@
 #gradient {
   width: 100%;
   display: grid;
-  grid-template-rows: 35px 1fr;
-  row-gap: 15px;
+  grid-template-rows: min-content 1fr;
+  // row-gap: 15px;
 }
 .shortlist {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
   overflow: auto;
   display: grid;
   column-gap: 10px;
   grid-template-columns: repeat(10, 70px);
-}
-
-.shortlist::-webkit-scrollbar {
-  display: none;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
 }
 
 .item {
@@ -64,7 +60,6 @@
   grid-template-columns: 1fr 1fr;
   row-gap: 15px;
   column-gap: 15px;
-  padding-bottom: 50px;
 
 }
 </style>

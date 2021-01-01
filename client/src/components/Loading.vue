@@ -23,6 +23,21 @@ export default {
   align-content: center;
 }
 
+section {
+  padding: 30px 30px !important;
+}
+
+@media (min-width: 768px) {
+  #loading {
+    grid-template-columns: 1fr max-content 1fr;
+
+    section {
+      padding: 30px 50px !important;
+      grid-column: 2;
+    }
+  }
+}
+
 .loader {
   font-size: 25px;
   animation: spin 2s infinite linear;

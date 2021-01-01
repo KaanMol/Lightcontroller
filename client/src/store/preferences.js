@@ -14,11 +14,13 @@ export const preferences = {
             sceneBackground: sceneBackground !== null ? sceneBackground : "DIMIGO",
             sceneText: sceneText !== null ? sceneText : "white",
             network: "",
+            ip: "",
             hostname: ""
         }
     },
     mutations: {
-        SOCKET_SYNC(state, { preferences }) {
+        SOCKET_SYNC(state, { isSetup, preferences }) {
+            if (!isSetup) return;
             localStorage.setItem("preference.uiType", preferences.ui.type);
             localStorage.setItem("preference.uiOption", preferences.ui.option);
             localStorage.setItem("preference.uiTheme", preferences.ui.theme);
@@ -26,16 +28,16 @@ export const preferences = {
             localStorage.setItem("preference.sceneText", preferences.scene.text);
 
             state.hostname = preferences.hostname;
+            state.ip = preferences.ip;
             state.uiType = preferences.ui.type;
             state.uiOption = preferences.ui.option;
-            // state.uiTheme = preferences.ui.theme;
-            state.uiTheme = "dark";
+            state.uiTheme = preferences.ui.theme;
+            state.rebootNeeded = preferences.rebootNeeded;
             state.sceneBackground = preferences.scene.background;
             state.sceneText = preferences.scene.text;
             state.network = preferences.network;
         },
         SOCKET_THEME(state, { type, value }) {
-            console.log(type)
             switch (type) {
                 case "type": 
                     state.uiType = value;
@@ -60,9 +62,6 @@ export const preferences = {
         },
         SOCKET_REBOOTNEEDED(state, rebootNeeded) {
             state.rebootNeeded = rebootNeeded;
-        },
-        SOCKET_HOSTNAME(state, hostname) {
-            state.hostname = hostname;
         },
     },
     actions: {
